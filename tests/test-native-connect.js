@@ -1,4 +1,6 @@
 'use strict';
+process.env.SMILEY_ALL_TABS='1'; // Connect, Flash and Phone are hidden in the shipped build; these tests still cover them
+
 // Native integration with an injected DoIP transport and synthetic TASU.
 // Exercises the real-mode traffic hand-off WITHOUT opening any network sockets.
 const assert=require('assert'),path=require('path'),fs=require('fs'),os=require('os');

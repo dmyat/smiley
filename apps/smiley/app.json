@@ -1,8 +1,8 @@
 {
   "id": "smiley",
   "title": "SMILEY",
-  "description": "Live engine gauges, tune map switching, exhaust control, fault codes for the engine or the whole car, AWD / 2WD switch, drag timer, G-meter, dyno, brake test and a phone dashboard. Beta Connect and Flash tools with an offline simulator; live BMW programming is not enabled.",
-  "version": "0.1.2",
+  "description": "Live engine gauges, tune map switching, exhaust control, fault codes for the engine or the whole car, AWD / 2WD switch, drag timer, G-meter, dyno and brake test.",
+  "version": "0.1.3",
   "vendor": "David Myat",
   "loggingId": "SMI1",
   "iconGlyph": "gauge",

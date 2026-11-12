@@ -32,25 +32,5 @@
       ]
     }
   },
-  "tools": [
-    {
-      "id": "smiley-phone-net",
-      "path": "native/smiley-phone-net",
-      "version": "1.0.0",
-      "title": "SMILEY Phone Access",
-      "description": "Lets a phone on the car Wi-Fi open SMILEY's phone page. Opens port 8765 only while the page is on.",
-      "mguHmi": [
-        "ID7"
-      ],
-      "optional": true,
-      "uninstallable": true,
-      "service": {
-        "exec": "smiley-phone-net",
-        "user": "root",
-        "after": [
-          "oapcontroller.service"
-        ]
-      }
-    }
-  ]
+  "tools": []
 }

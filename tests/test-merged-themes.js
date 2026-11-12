@@ -1,4 +1,6 @@
 'use strict';
+process.env.SMILEY_ALL_TABS='1'; // Connect, Flash and Phone are hidden in the shipped build; these tests still cover them
+
 // Exercise the latest uploaded theme settings through the actual merged native app.
 const assert=require('assert'),fs=require('fs'),path=require('path'),os=require('os');
 const stage=path.join(__dirname,'../dist/smiley'),app=path.join(stage,'source/javascript');
@@ -17,7 +19,7 @@ const tap=async key=>{await hu.loopFn();const t=targets().find(t=>t.key===key);a
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 setTimeout(async()=>{
  try{
-  assert.equal(hu.spec.version,'0.1.2');assert.equal(UI.TABS.length,9);
+  assert.equal(hu.spec.version,'0.1.3');assert.equal(UI.TABS.length,9);
   const themes=hu.spec.settings.find(s=>s.key==='theme').options.map(o=>o[0]);
   assert.deepStrictEqual(themes,['smiley','l_burgundy','j_amethyst','l_midnight','s_green','s_m','spider','custom']);
   setting('customA','teal');setting('customB','gold');setting('customBg','graphite');

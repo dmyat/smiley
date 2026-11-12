@@ -3,8 +3,13 @@ const G = require('./kit/gauges');
 const { withAlpha } = require('./kit/canvas');
 const QR = require('./qrcodegen');
 const W = 1600, H = 520;
-const TABS = ['Live Stats', 'AWD / 2WD', 'Perf', 'Tune', 'Phone', 'Faults', 'Connect', 'Flash', 'Info'];
-const PAGE = { stats: 0, xdrive: 1, perf: 2, controls: 3, phone: 4, faults: 5, connect: 6, flash: 7, info: 8 };
+// Tabs switched off in this build. Their code stays in place; the tests turn them back on
+// with SMILEY_ALL_TABS=1. A hidden page has the index -1, which no tab or button can select.
+const HIDDEN = process.env.SMILEY_ALL_TABS === '1' ? [] : ['Phone', 'Connect', 'Flash'];
+const ALL_TABS = [['stats', 'Live Stats'], ['xdrive', 'AWD / 2WD'], ['perf', 'Perf'], ['controls', 'Tune'], ['phone', 'Phone'],
+    ['faults', 'Faults'], ['connect', 'Connect'], ['flash', 'Flash'], ['info', 'Info']];
+const TABS = [], PAGE = {};
+ALL_TABS.forEach((t) => { if (HIDDEN.indexOf(t[1]) >= 0) PAGE[t[0]] = -1; else { PAGE[t[0]] = TABS.length; TABS.push(t[1]); } });
 // Two colour themes. THEME is the one in use: setTheme() copies a palette into it, so every page
 // reads the same object and a change in Settings shows on the next frame.
 const PALETTES = {
@@ -403,7 +408,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.2 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.3 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
@@ -501,7 +506,7 @@ function gPage(cv,p,a) {
  */
 function dynoPage(cv,p,v) {
     const d=p.dyno, r=d.last, b=d.prev, hp=(w)=>w/745.7, lbft=v.torqueUnit==='lbft', tq=(nm)=>lbft?nm*0.73756:nm, tU=lbft?'lb-ft':'Nm';
-    const st={idle:[r?'LAST PULL':'READY - FLOOR IT IN ONE GEAR',THEME.dim],pull:['RECORDING',GO],short:['TOO SHORT - REV THROUGH 1500 RPM OR MORE',THEME.warn],done:['NEW PULL SAVED',GO]}[d.state];
+    const st={idle:[r?'LAST PULL':'READY - FLOOR IT IN ONE GEAR',THEME.dim],pull:['RECORDING',GO],short:['TOO SHORT - REV 1500+ RPM',THEME.warn],done:['NEW PULL SAVED',GO]}[d.state];
     card(cv,44,160,372,300,16);
     text(cv,st[0],70,198,16,st[1],{font:'bold',spacing:1});
     text(cv,'PEAK POWER',70,236,13,THEME.dim,{font:'bold',spacing:1.5});

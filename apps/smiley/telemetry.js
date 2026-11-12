@@ -20,11 +20,12 @@ const PEAK_KEYS = ['rpm', 'boost', 'oil', 'coolant', 'iat', 'hpfp', 'stft1', 'st
 // Read as fast as the engine unit answers: the gauges of the page on screen every turn, the rest about once a second.
 const QUICK = ['boost', 'hpfp', 'timing', 'lambda', 'boostTarget', 'load', 'lpfp', 'oilp'];      // the ones that move fast enough to be worth it
 const SLOW_MS = 1000;
+const RETRY_MS = 2000;           // a reading that has worked before is asked again this soon after it fails
 const GAP_MS = 25;
 class Telemetry {
     constructor(ctx, session, clock) {
         this.ctx = ctx; this.session = session; this.clock = clock || Date.now;
-        this.values = {}; this.times = {}; this.fail = {}; this.next = {};
+        this.values = {}; this.times = {}; this.fail = {}; this.next = {}; this.answered = {};
         this.reader = null; this.link = null; this.index = 0;
         this.focus = null;           // the gauges on screen (ids), read fastest: setFocus()
         // selector position per source: 'P' | 'R' | 'N' | 'D', or null when that source cannot tell
@@ -142,10 +143,20 @@ class Telemetry {
         const done = () => { this.lastAsk = this.clock(); };
         if (k === 'misfire') return this.session.poll(() => this.readMisfire().then(done, done));
         return this.session.poll(async () => {
-            const candidates = (this.cfg[k] || []).map((c) => Object.assign({}, c, { timeoutMs: 900 }));
+            let candidates = (this.cfg[k] || []).map((c) => Object.assign({}, c, { timeoutMs: 900 }));
+            // A reading that has answered on this car is asked the way that worked, not through every
+            // alternative again: one slow reply under load must not hold up the other gauges for seconds.
+            const picks = this.reader.pick, at = picks && this.answered[k] && (this.fail[k] || 0) < 5 ? picks[k] || 0 : -1;
+            if (at >= 0 && candidates[at]) candidates = [candidates[at]];
             const v = await this.reader.value(k, candidates);
-            if (v !== null) { this.put(k, v); this.fail[k] = 0; this.next[k] = k === 'baro' ? this.clock() + 60000 : fast.indexOf(k) >= 0 ? 0 : this.clock() + SLOW_MS; }
-            else { this.fail[k] = (this.fail[k] || 0) + 1; if (this.fail[k] >= 2) this.next[k] = this.clock() + 30000; }
+            if (at >= 0 && picks) picks[k] = at;       // value() counted within the short list: keep the place in the full one
+            if (v !== null) { this.put(k, v); this.fail[k] = 0; this.answered[k] = true; this.next[k] = k === 'baro' ? this.clock() + 60000 : fast.indexOf(k) >= 0 ? 0 : this.clock() + SLOW_MS; }
+            else {
+                this.fail[k] = (this.fail[k] || 0) + 1;
+                // Only a reading this car has never answered is left alone for 30 s. One that has answered
+                // (or the outside air pressure, which the boost gauge waits for) is asked again soon.
+                if (this.fail[k] >= 2) this.next[k] = this.clock() + (this.answered[k] || k === 'baro' ? RETRY_MS : 30000);
+            }
             done();
         });
     }
@@ -214,7 +225,9 @@ class Telemetry {
         }
         const v = { demo: false };
         ['rpm', 'oil', 'coolant', 'iat', 'hpfp', 'stft1', 'stft2'].forEach((k) => { v[k] = this.fresh(k, k === 'rpm' ? 3000 : 15000); });
-        const abs = this.fresh('boost', 5000), baro = this.fresh('baro', 120000);
+        // The outside air pressure hardly moves during a drive: once read, the last value is kept for
+        // the session, so one missed re-read does not blank the boost, boost target and oil pressure.
+        const abs = this.fresh('boost', 5000), baro = num(this.values.baro) ? this.values.baro : null;
         // Never display absolute manifold pressure as boost; no assumed sea-level pressure.
         v.boost = abs !== null && baro !== null ? (abs - baro) / 100 : null;
         v.boostMissingBaro = abs !== null && baro === null;

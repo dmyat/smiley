@@ -1,4 +1,6 @@
 'use strict';
+process.env.SMILEY_ALL_TABS='1'; // Connect, Flash and Phone are hidden in the shipped build; these tests still cover them
+
 // The actual native entry point, actual button targets and actual themes; fictional ECU only.
 const assert=require('assert'),path=require('path'),fs=require('fs'),os=require('os');
 const stage=path.join(__dirname,'../dist/smiley'),app=path.join(stage,'source/javascript');
