@@ -1,0 +1,20 @@
+SMILEY 0.1.0
+Created by David Myat.
+
+Contains MIT-licensed runtime and diagnostic code from
+cauliflowermossgrape/idrive7-apps. Original authors and contributors retain
+their copyrights. See LICENSE and UPSTREAM_REVISION.
+
+New SMILEY application integration, presentation, logging and phone dashboard
+code is distributed under the same MIT terms.
+
+qrcodegen.js is Project Nayuki's MIT-licensed QR generator, version 1.5.0,
+vendored from robertnisipeanu/mgu-store. See LICENSE-qrcodegen.txt and the
+copyright/license comment in that source file.
+
+BMW, MHD and bootmod3 are their respective owners' marks. This is an
+independent community application, not their official software. No BMW SDK,
+tune files, license keys or credentials are included.
+
+The app's lettering is Inter (The Inter Project Authors), SIL Open Font License 1.1:
+see kit/runtime/fonts/OFL-Inter.txt.

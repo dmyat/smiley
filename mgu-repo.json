@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "apps": {
+    "path": "apps/*",
+    "manifest": "app.json",
+    "icon": "icon.png",
+    "mguHmi": [
+      "ID7"
+    ],
+    "requires": {
+      "idrive7-renderd": "2.1.7",
+      "mgu-inputgate": "1.0.0"
+    },
+    "build": {
+      "python": "kit/tools/build.py",
+      "args": [
+        "{id}"
+      ],
+      "sdk": "oap-sdk",
+      "output": "dist/{id}@{version}.tgz",
+      "network": [],
+      "shared": [
+        "kit/runtime",
+        "kit/platform",
+        "kit/localization",
+        "kit/tools/build.py",
+        "kit/tools/pack_data.py",
+        "kit/tools/localize.py",
+        "kit/tools/locale-revisions.json",
+        "kit/tools/oapgen",
+        "oap-sdk"
+      ]
+    }
+  },
+  "tools": [
+    {
+      "id": "smiley-phone-net",
+      "path": "native/smiley-phone-net",
+      "version": "1.0.0",
+      "title": "SMILEY Phone Access",
+      "description": "Lets a phone on the car Wi-Fi open SMILEY's phone page. Opens port 8765 only while the page is on.",
+      "mguHmi": [
+        "ID7"
+      ],
+      "optional": true,
+      "uninstallable": true,
+      "service": {
+        "exec": "smiley-phone-net",
+        "user": "root",
+        "after": [
+          "oapcontroller.service"
+        ]
+      }
+    }
+  ]
+}
