@@ -27,7 +27,7 @@ class Telemetry {
     constructor(ctx, session, clock) {
         this.ctx = ctx; this.session = session; this.clock = clock || Date.now;
         this.values = {}; this.times = {}; this.fail = {}; this.next = {}; this.answered = {};
-        this.reader = null; this.link = null; this.index = 0;
+        this.reader = null; this.link = null; this.index = 0; this.quickTurn = 0;
         this.focus = null;           // the gauges on screen (ids), read fastest: setFocus()
         // selector position per source: 'P' | 'R' | 'N' | 'D', or null when that source cannot tell
         this.stages = {};
@@ -139,7 +139,11 @@ class Telemetry {
         const quick = fast.filter(due);
         this.index++;
         // two fast reads, then one of the others that is due
-        const k = slow && (this.index % 3 === 0 || !quick.length) ? slow : quick.length ? quick[this.index % quick.length] : null;
+        // The fast gauges take turns on a counter of their own. Sharing the counter that hands every
+        // third turn to the others left one fast gauge without a turn whenever three were on screen
+        // (on the default first page that was the boost).
+        const slowTurn = slow && (this.index % 3 === 0 || !quick.length);
+        const k = slowTurn ? slow : quick.length ? quick[this.quickTurn++ % quick.length] : null;
         if (!k) return;
         const done = () => { this.lastAsk = this.clock(); };
         if (k === 'misfire') return this.session.poll(() => this.readMisfire().then(done, done));

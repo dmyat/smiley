@@ -124,6 +124,14 @@ async function run(){
   const t=new Telemetry(ctx(),new Session(),()=>1000);t.put('oilp',4.5);t.put('boostTarget',221.3);let s=t.snapshot(false);assert(Math.abs(s.oilp-3.487)<1e-6);assert(Math.abs(s.boostTarget-1.2)<1e-6);
   t.put('baro',91.3);s=t.snapshot(false);assert(Math.abs(s.oilp-3.587)<1e-6);assert(Math.abs(s.boostTarget-1.3)<1e-6);
  });
+ await test('Every fast gauge on the default first page gets its turn (boost, oil pressure, fuel pressure)',async()=>{
+  let now=1e6;const n={};const t=new Telemetry(ctx(),{poll:(fn)=>fn()},()=>now);
+  t.link={available:true};t.reader={pick:{},value:async(k)=>{n[k]=(n[k]||0)+1;now+=60;return k==='baro'?101:150;},monitor:async()=>null};
+  t.setFocus(['rpm','boost','oil','coolant','iat','stft1','oilp','hpfp']);
+  for(let i=0;i<300;i++){await t.poll();now+=40;}
+  for(const k of ['boost','oilp','hpfp'])assert(n[k]>=50,k+' was read '+(n[k]||0)+' times');
+  assert(n.iat>=5,'the slower readings still get their turns');assert(t.snapshot(false).boost!==null);
+ });
  await test('Misfire counts are summed per driving cycle; an engine without them is left alone',async()=>{
   const t=new Telemetry(ctx(),new Session(),()=>1000);let asked=0;
   t.reader={monitor:async(ecu,mid,did)=>{asked++;assert.equal(ecu,0x12);return did?null:[{tid:0x0C,value:mid===0xA4?3:0},{tid:0x0B,value:99}];}};
