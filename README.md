@@ -6,7 +6,7 @@
 
 **Your BMW's engine, tune, faults and performance timers, on the car's own screen.**
 
-An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.3 &nbsp;·&nbsp; by David Myat
+An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.4 &nbsp;·&nbsp; by David Myat
 
 [Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#eight-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
 
@@ -20,7 +20,7 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.3 &nbsp;·&nb
 
 ## The tour
 
-Six tabs across the top of the screen in version 0.1.3: Live Stats, AWD / 2WD,
+Six tabs across the top of the screen in version 0.1.4: Live Stats, AWD / 2WD,
 Perf, Tune, Faults and Info. **Phone, Connect and Flash are switched off for
 now**; their sections below describe what they do when they return. The
 screenshots come from the simulation, with demo data.
@@ -94,7 +94,7 @@ Clearing needs the car in Park and two presses.
 <tr>
 <td>
 
-### Phone (switched off in 0.1.3)
+### Phone (switched off for now)
 
 Live gauges in a phone browser over the car's Wi-Fi. View only: the phone
 cannot control the car.
@@ -108,7 +108,7 @@ Needs the SMILEY Phone Access helper, listed under the same Store source.
 <td width="55%"><img src="docs/screenshots/connect-flash/smiley-connect.png" alt="Connect beta with a fictional ECU"></td>
 <td>
 
-### Connect (beta, switched off in 0.1.3)
+### Connect (beta, switched off for now)
 
 A dedicated DoIP connection for ECU identification, plus an offline demo ECU.
 Requires a vehicle-specific connection setup for real diagnostics. A beta
@@ -119,7 +119,7 @@ warning appears before the controls each time you enter this tab.
 <tr>
 <td>
 
-### Flash (beta, switched off in 0.1.3)
+### Flash (beta, switched off for now)
 
 Calibration-file checks, matching the file to the ECU, two-step confirmation,
 and acknowledged transfer progress. The full workflow runs against the demo ECU.
@@ -160,7 +160,7 @@ combinations.
 
 ## Connect and Flash beta
 
-> Both tabs are hidden in version 0.1.3. The notes below apply when they are
+> Both tabs are hidden in this version. The notes below apply when they are
 > switched back on (`HIDDEN` in `apps/smiley/ui.js`).
 
 This build merges Connect and Flash into the latest uploaded `smiley-MAIN`

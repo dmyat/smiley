@@ -27,9 +27,9 @@ async function run(){
   const s=new Session();let writes=0;s.demo=true;await reject(()=>s.action(()=>writes++),/Demo/);s.demo=false;s.paused=true;await reject(()=>s.action(()=>writes++),/paused/);assert.equal(writes,0);
  });
  await test('Failed commands release the session lock',async()=>{const s=new Session();await reject(()=>s.action(()=>{throw Error('failed');}),/failed/);assert.equal(s.busy,false);await s.action(()=>{});});
- await test('Each telemetry field expires independently; barometric pressure is required',async()=>{
+ await test('Each telemetry field expires independently; boost uses standard pressure until the car reports its own',async()=>{
   let time=1000;const t=new Telemetry(ctx(),new Session(),()=>time);t.put('rpm',800);t.put('boost',201.3);
-  assert.equal(t.snapshot(false).boost,null);t.put('baro',101.3);assert(Math.abs(t.snapshot(false).boost-1)<1e-8);
+  let s0=t.snapshot(false);assert(Math.abs(s0.boost-1)<1e-8);assert.equal(s0.boostMissingBaro,true);t.put('baro',91.3);s0=t.snapshot(false);assert(Math.abs(s0.boost-1.1)<1e-8);assert.equal(s0.boostMissingBaro,false);
   time+=4000;t.put('coolant',95);assert.equal(t.snapshot(false).rpm,null);assert.equal(t.snapshot(false).coolant,95);
   time+=16000;assert.equal(t.snapshot(false).coolant,null);
  });

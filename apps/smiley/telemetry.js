@@ -20,6 +20,7 @@ const PEAK_KEYS = ['rpm', 'boost', 'oil', 'coolant', 'iat', 'hpfp', 'stft1', 'st
 // Read as fast as the engine unit answers: the gauges of the page on screen every turn, the rest about once a second.
 const QUICK = ['boost', 'hpfp', 'timing', 'lambda', 'boostTarget', 'load', 'lpfp', 'oilp'];      // the ones that move fast enough to be worth it
 const SLOW_MS = 1000;
+const STANDARD_BARO = 101.3;      // kPa, used for boost until the car reports its outside air pressure
 const RETRY_MS = 2000;           // a reading that has worked before is asked again this soon after it fails
 const GAP_MS = 25;
 class Telemetry {
@@ -227,10 +228,11 @@ class Telemetry {
         ['rpm', 'oil', 'coolant', 'iat', 'hpfp', 'stft1', 'stft2'].forEach((k) => { v[k] = this.fresh(k, k === 'rpm' ? 3000 : 15000); });
         // The outside air pressure hardly moves during a drive: once read, the last value is kept for
         // the session, so one missed re-read does not blank the boost, boost target and oil pressure.
-        const abs = this.fresh('boost', 5000), baro = num(this.values.baro) ? this.values.baro : null;
-        // Never display absolute manifold pressure as boost; no assumed sea-level pressure.
+        // Until the car has answered it, the standard sea-level pressure stands in (as the kit's HUD
+        // does), so the gauges show at once; up high they read a little high until the real value arrives.
+        const abs = this.fresh('boost', 5000), baroRead = num(this.values.baro), baro = baroRead ? this.values.baro : STANDARD_BARO;
         v.boost = abs !== null && baro !== null ? (abs - baro) / 100 : null;
-        v.boostMissingBaro = abs !== null && baro === null;
+        v.boostMissingBaro = abs !== null && !baroRead;      // shown, but against the standard pressure
         ['timing', 'lambda', 'lpfp', 'load'].forEach((k) => { v[k] = this.fresh(k, 15000); });
         v.torque = this.fresh('torque', 3000);
         // the oil pressure and the boost setpoint are read absolute, like the boost: shown over ambient
