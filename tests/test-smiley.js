@@ -120,9 +120,9 @@ async function run(){
   let now=1000;const t=new Telemetry(ctx(),new Session(),()=>now);t.put('rpm',900);t.snapshot(false);t.put('rpm',5200);t.snapshot(false);t.put('rpm',2000);
   const s=t.snapshot(false);assert.deepStrictEqual(s.peaks.rpm,{min:900,max:5200});assert.equal(s.peaks.boost,undefined);t.resetPeaks();assert.deepStrictEqual(t.snapshot(false).peaks.rpm,{min:2000,max:2000});
  });
- await test('Oil pressure and boost target are shown over ambient and need barometric pressure',async()=>{
-  const t=new Telemetry(ctx(),new Session(),()=>1000);t.put('oilp',4.5);t.put('boostTarget',221.3);assert.equal(t.snapshot(false).oilp,null);assert.equal(t.snapshot(false).boostTarget,null);
-  t.put('baro',101.3);const s=t.snapshot(false);assert(Math.abs(s.oilp-3.487)<1e-6);assert(Math.abs(s.boostTarget-1.2)<1e-6);
+ await test('Oil pressure and boost target are shown over ambient, over standard pressure until the car reports its own',async()=>{
+  const t=new Telemetry(ctx(),new Session(),()=>1000);t.put('oilp',4.5);t.put('boostTarget',221.3);let s=t.snapshot(false);assert(Math.abs(s.oilp-3.487)<1e-6);assert(Math.abs(s.boostTarget-1.2)<1e-6);
+  t.put('baro',91.3);s=t.snapshot(false);assert(Math.abs(s.oilp-3.587)<1e-6);assert(Math.abs(s.boostTarget-1.3)<1e-6);
  });
  await test('Misfire counts are summed per driving cycle; an engine without them is left alone',async()=>{
   const t=new Telemetry(ctx(),new Session(),()=>1000);let asked=0;
