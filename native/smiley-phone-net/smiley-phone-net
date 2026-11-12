@@ -1,0 +1,102 @@
+#!/usr/bin/node
+'use strict';
+/*
+ * smiley-phone-net: lets a phone on the car's Wi-Fi reach SMILEY's phone page.
+ *
+ * The head unit's firewall (table ip filter, chain input) drops what it has no rule for, and an
+ * app cannot change it. This small root service does one thing: while SMILEY's phone page is
+ * running (Phone tab, Start phone access), it keeps one rule at the top of that chain,
+ *
+ *     iifname "wlan_bridge" tcp dport 8765 accept comment "smiley-phone-net"
+ *
+ * and takes it out again when the page stops, when this service stops, and at its own start (a
+ * rule left by an earlier run). It opens nothing else, listens on nothing and sends nothing.
+ * The same approach as the MGU Store's own phone page and NamelsMissing/mgu-apps' network helpers.
+ * Node 8 (the head unit's).
+ */
+const os = require('os');
+const http = require('http');
+const cp = require('child_process');
+
+const TAG = 'smiley-phone-net';
+const IFACE = process.env.SMILEY_PHONE_IFACE || 'wlan_bridge';
+const PORT = 8765;
+const NFT = process.env.SMILEY_PHONE_NFT || 'nft';
+const TICK_MS = Number(process.env.SMILEY_PHONE_TICK_MS) || 3000;
+const RECHECK_MS = 20000;
+const CHAIN = ['ip', 'filter', 'input'];
+const log = (s) => console.log('[' + TAG + '] ' + s);
+
+function nft(args) {
+    return new Promise((resolve, reject) => {
+        cp.execFile(NFT, args, { timeout: 15000, maxBuffer: 4 << 20 }, (err, stdout, stderr) => {
+            if (err) reject(new Error('nft ' + args.join(' ') + ': ' + (String(stderr || '').trim() || err.message)));
+            else resolve(String(stdout));
+        });
+    });
+}
+/** Handles of this service's rules in the chain; null when the chain cannot be listed. */
+function handles() {
+    return nft(['-a', 'list', 'chain'].concat(CHAIN)).then((out) => out.split('\n')
+        .filter((line) => line.indexOf('comment "' + TAG + '"') >= 0)
+        .map((line) => /# handle (\d+)\s*$/.exec(line)).filter(Boolean).map((m) => m[1]), () => null);
+}
+function close() {
+    return handles().then((hs) => (hs || []).reduce((p, h) =>
+        p.then(() => nft(['delete', 'rule'].concat(CHAIN, ['handle', h]))), Promise.resolve()));
+}
+function open() {
+    return handles().then((hs) => {
+        if (hs === null) throw new Error('the firewall chain ip filter input was not found');
+        if (hs.length === 1) return 'kept';
+        // none, or more than one after a crash: start clean and put exactly one in
+        return hs.reduce((p, h) => p.then(() => nft(['delete', 'rule'].concat(CHAIN, ['handle', h]))), Promise.resolve())
+            .then(() => nft(['insert', 'rule'].concat(CHAIN, ['iifname', '"' + IFACE + '"', 'tcp', 'dport', String(PORT),
+                'accept', 'comment', '"' + TAG + '"']))).then(() => 'added');
+    });
+}
+function wifiAddress() {
+    const list = os.networkInterfaces()[IFACE] || [];
+    const a = list.filter((x) => (x.family === 'IPv4' || x.family === 4) && !x.internal)[0];
+    return process.env.SMILEY_PHONE_ADDR || (a ? a.address : null);
+}
+/** Is SMILEY's phone page answering on the car Wi-Fi address? (It says so itself, with a header.) */
+function pageRunning() {
+    const host = wifiAddress();
+    if (!host) return Promise.resolve(false);
+    return new Promise((resolve) => {
+        let done = false;
+        const finish = (v) => { if (!done) { done = true; resolve(!!v); } };
+        const req = http.get({ hostname: host, port: PORT, path: '/.smiley-health' }, (res) => {
+            const ok = res.statusCode === 200 && res.headers['x-smiley-phone'] === '1';
+            res.resume(); res.on('end', () => finish(ok)); res.on('error', () => finish(false));
+        });
+        req.setTimeout(1200, () => req.abort());
+        req.on('error', () => finish(false));
+    });
+}
+
+let isOpen = false, lastCheck = 0, busy = false, stopping = false, lastError = '';
+function tick() {
+    if (busy || stopping) return;
+    busy = true;
+    pageRunning().then((running) => {
+        const now = Date.now();
+        if (running) {
+            if (isOpen && now - lastCheck < RECHECK_MS) return null;     // the head unit can reload its rules: look again now and then
+            return open().then((r) => { lastCheck = now; if (!isOpen || r === 'added') log('phone page is on: port ' + PORT + ' open on ' + IFACE + ' (' + r + ')'); isOpen = true; });
+        }
+        if (!isOpen) return null;
+        return close().then(() => { isOpen = false; lastCheck = now; log('phone page is off: port closed'); });
+    }).then(() => { lastError = ''; }, (e) => { const m = e && e.message || String(e); if (m !== lastError) { lastError = m; log('firewall: ' + m); } })
+        .then(() => { busy = false; });
+}
+function stop() {
+    if (stopping) return;
+    stopping = true;
+    const hard = setTimeout(() => process.exit(1), 10000);
+    close().then(() => { clearTimeout(hard); process.exit(0); }, (e) => { log('cleanup: ' + (e && e.message)); process.exit(1); });
+}
+process.on('SIGTERM', stop);
+process.on('SIGINT', stop);
+close().then(() => {}, () => {}).then(() => { log('started; watching for the SMILEY phone page'); tick(); setInterval(tick, TICK_MS); });

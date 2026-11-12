@@ -1,0 +1,899 @@
+{
+  "id": "smiley",
+  "title": "SMILEY",
+  "description": "Live engine gauges, tune map switching, exhaust control, fault codes for the engine or the whole car, AWD / 2WD switch, drag timer, G-meter, dyno, brake test and a phone dashboard. Beta Connect and Flash tools with an offline simulator; live BMW programming is not enabled.",
+  "version": "0.1.2",
+  "vendor": "David Myat",
+  "loggingId": "SMI1",
+  "iconGlyph": "gauge",
+  "signals": {
+    "de.bmw.infotainment.vehicle.CDS": {
+      "statusEngineSpeed2": "rs",
+      "statusEngineTemperature": "rs"
+    },
+    "de.bmw.infotainment.vehicle.Vehicle2": {
+      "statusCarSpeed2": "rs"
+    },
+    "de.bmw.infrastructure.VehicleInformation": {
+      "statusGearboxDrive": "s",
+      "DataPowerTrain2": "s"
+    },
+    "de.bmw.infrastructure.VehicleCondition": {
+      "VehicleCondition": "s"
+    },
+    "com.harman.infotainment.systemfunctions.tasu.tasu.InternalTasu": {
+      "_instances": "SystemFunctionsInternalTasuInst1",
+      "_methods": [
+        "sendTasuRequest"
+      ],
+      "_broadcasts": [
+        "sendTasuResponse"
+      ]
+    },
+    "de.bmw.infotainment.drivingexcitement.FES": {
+      "_optional": "engine torque, the virtual dyno's comparison line",
+      "statusActualValueTorque2": "rs"
+    },
+    "de.bmw.infotainment.vehicle.CDS2": {
+      "_optional": "G-meter, virtual dyno and brake test",
+      "statusLongitudinalAccelerationMassCenter": "rs",
+      "statusLateralAccelerationMassCenter": "rs"
+    }
+  },
+  "settings": [
+    {
+      "key": "tuner",
+      "label": "Your tune",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "off",
+          "None"
+        ],
+        [
+          "mhd",
+          "MHD"
+        ],
+        [
+          "bm3",
+          "bootmod3"
+        ]
+      ]
+    },
+    {
+      "key": "arm",
+      "label": "Exhaust control",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "off",
+          "Off"
+        ],
+        [
+          "on",
+          "On"
+        ]
+      ]
+    },
+    {
+      "key": "xdrive",
+      "label": "AWD / 2WD switch (experimental)",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "off",
+          "Off"
+        ],
+        [
+          "on",
+          "On"
+        ]
+      ]
+    },
+    {
+      "key": "hold",
+      "label": "Keep the exhaust setting",
+      "type": "choice",
+      "default": "on",
+      "options": [
+        [
+          "on",
+          "On"
+        ],
+        [
+          "off",
+          "Off"
+        ]
+      ]
+    },
+    {
+      "key": "closeLimit",
+      "label": "When closed, go back to stock above",
+      "type": "choice",
+      "default": "4000",
+      "options": [
+        [
+          "3000",
+          "3000 rpm"
+        ],
+        [
+          "3500",
+          "3500 rpm"
+        ],
+        [
+          "4000",
+          "4000 rpm"
+        ],
+        [
+          "4500",
+          "4500 rpm"
+        ]
+      ]
+    },
+    {
+      "key": "tempUnit",
+      "label": "Temperature",
+      "type": "choice",
+      "default": "f",
+      "options": [
+        [
+          "f",
+          "Fahrenheit"
+        ],
+        [
+          "c",
+          "Celsius"
+        ]
+      ]
+    },
+    {
+      "key": "pressUnit",
+      "label": "Pressure",
+      "type": "choice",
+      "default": "psi",
+      "options": [
+        [
+          "psi",
+          "psi"
+        ],
+        [
+          "bar",
+          "bar"
+        ]
+      ]
+    },
+    {
+      "key": "speedUnit",
+      "label": "Speed",
+      "type": "choice",
+      "default": "mph",
+      "options": [
+        [
+          "mph",
+          "mph"
+        ],
+        [
+          "kmh",
+          "km/h"
+        ]
+      ]
+    },
+    {
+      "key": "torqueUnit",
+      "label": "Torque",
+      "type": "choice",
+      "default": "lbft",
+      "options": [
+        [
+          "lbft",
+          "lb-ft"
+        ],
+        [
+          "nm",
+          "Nm"
+        ]
+      ]
+    },
+    {
+      "key": "rollout",
+      "label": "Drag timer: one-foot rollout",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "off",
+          "Off"
+        ],
+        [
+          "on",
+          "On"
+        ]
+      ]
+    },
+    {
+      "key": "weight",
+      "label": "Dyno: car weight with driver",
+      "type": "choice",
+      "default": "1850",
+      "options": [
+        [
+          "1600",
+          "1600 kg (3530 lb)"
+        ],
+        [
+          "1700",
+          "1700 kg (3750 lb)"
+        ],
+        [
+          "1800",
+          "1800 kg (3970 lb)"
+        ],
+        [
+          "1850",
+          "1850 kg (4080 lb)"
+        ],
+        [
+          "1900",
+          "1900 kg (4190 lb)"
+        ],
+        [
+          "2000",
+          "2000 kg (4410 lb)"
+        ],
+        [
+          "2100",
+          "2100 kg (4630 lb)"
+        ]
+      ]
+    },
+    {
+      "key": "loss",
+      "label": "Dyno: drivetrain loss",
+      "type": "choice",
+      "default": "15",
+      "options": [
+        [
+          "10",
+          "10 %"
+        ],
+        [
+          "12",
+          "12 %"
+        ],
+        [
+          "15",
+          "15 %"
+        ],
+        [
+          "18",
+          "18 %"
+        ],
+        [
+          "20",
+          "20 %"
+        ]
+      ]
+    },
+    {
+      "key": "body",
+      "label": "Dyno: body shape",
+      "type": "choice",
+      "default": "sedan",
+      "options": [
+        [
+          "sedan",
+          "Sedan / coupe"
+        ],
+        [
+          "wagon",
+          "Touring / hatch"
+        ],
+        [
+          "suv",
+          "SUV"
+        ]
+      ]
+    },
+    {
+      "key": "theme",
+      "label": "Theme",
+      "type": "choice",
+      "default": "smiley",
+      "options": [
+        [
+          "smiley",
+          "Noir & Champagne"
+        ],
+        [
+          "l_burgundy",
+          "Burgundy & Gold"
+        ],
+        [
+          "j_amethyst",
+          "Amethyst & Gold"
+        ],
+        [
+          "l_midnight",
+          "Midnight & Gold"
+        ],
+        [
+          "s_green",
+          "Racing Green"
+        ],
+        [
+          "s_m",
+          "Motorsport"
+        ],
+        [
+          "spider",
+          "Spider Red & Blue"
+        ],
+        [
+          "custom",
+          "Custom (colours below)"
+        ]
+      ]
+    },
+    {
+      "key": "customA",
+      "label": "Custom theme: main colour",
+      "type": "choice",
+      "default": "gold",
+      "options": [
+        [
+          "gold",
+          "Gold"
+        ],
+        [
+          "red",
+          "Red"
+        ],
+        [
+          "burgundy",
+          "Burgundy"
+        ],
+        [
+          "orange",
+          "Orange"
+        ],
+        [
+          "green",
+          "Green"
+        ],
+        [
+          "teal",
+          "Teal"
+        ],
+        [
+          "blue",
+          "Blue"
+        ],
+        [
+          "sky",
+          "Light blue"
+        ],
+        [
+          "purple",
+          "Purple"
+        ],
+        [
+          "pink",
+          "Pink"
+        ],
+        [
+          "silver",
+          "Silver"
+        ],
+        [
+          "white",
+          "White"
+        ]
+      ]
+    },
+    {
+      "key": "customB",
+      "label": "Custom theme: second colour",
+      "type": "choice",
+      "default": "silver",
+      "options": [
+        [
+          "gold",
+          "Gold"
+        ],
+        [
+          "red",
+          "Red"
+        ],
+        [
+          "burgundy",
+          "Burgundy"
+        ],
+        [
+          "orange",
+          "Orange"
+        ],
+        [
+          "green",
+          "Green"
+        ],
+        [
+          "teal",
+          "Teal"
+        ],
+        [
+          "blue",
+          "Blue"
+        ],
+        [
+          "sky",
+          "Light blue"
+        ],
+        [
+          "purple",
+          "Purple"
+        ],
+        [
+          "pink",
+          "Pink"
+        ],
+        [
+          "silver",
+          "Silver"
+        ],
+        [
+          "white",
+          "White"
+        ]
+      ]
+    },
+    {
+      "key": "customBg",
+      "label": "Custom theme: background",
+      "type": "choice",
+      "default": "black",
+      "options": [
+        [
+          "black",
+          "Black"
+        ],
+        [
+          "warm",
+          "Warm black"
+        ],
+        [
+          "navy",
+          "Navy"
+        ],
+        [
+          "graphite",
+          "Graphite"
+        ]
+      ]
+    },
+    {
+      "key": "layout",
+      "label": "Screen layout",
+      "type": "choice",
+      "default": "full",
+      "options": [
+        [
+          "full",
+          "Full screen"
+        ],
+        [
+          "standard",
+          "Standard"
+        ]
+      ]
+    },
+    {
+      "key": "renderer",
+      "label": "Graphics",
+      "type": "choice",
+      "default": "auto",
+      "options": [
+        [
+          "auto",
+          "Smooth (GPU)"
+        ],
+        [
+          "software",
+          "Basic"
+        ]
+      ]
+    },
+    {
+      "key": "demo",
+      "label": "Demo data",
+      "type": "choice",
+      "default": "off",
+      "options": [
+        [
+          "off",
+          "Off (real car data)"
+        ],
+        [
+          "on",
+          "On (fake data, nothing sent)"
+        ]
+      ]
+    }
+  ],
+  "screens": [
+    {
+      "name": "MAIN",
+      "kind": "canvas",
+      "title": "SMILEY",
+      "buttons": [
+        [
+          "BTN_PAGE",
+          "Next tab"
+        ],
+        [
+          "BTN_CHOICE",
+          "Select"
+        ],
+        [
+          "BTN_ACTION",
+          "Go"
+        ],
+        [
+          "BTN_EXHAUST",
+          "Exhaust"
+        ],
+        [
+          "BTN_CLEAR",
+          "Clear faults"
+        ],
+        [
+          "BTN_SETTINGS",
+          "Settings"
+        ]
+      ]
+    }
+  ],
+  "config": {
+    "bm3MarkerAddress": "807FFE50",
+    "dme": {
+      "boost": [
+        {
+          "did": "F470",
+          "bytes": 2,
+          "at": 3,
+          "factor": 0.03125,
+          "offset": 0,
+          "min": 20,
+          "max": 600,
+          "note": "OBD PID 0x70 boost pressure control: actual boost pressure sensor A (absolute), 1/32 kPa"
+        },
+        {
+          "did": "F487",
+          "bytes": 2,
+          "at": 1,
+          "factor": 0.03125,
+          "offset": 0,
+          "min": 20,
+          "max": 600,
+          "note": "OBD PID 0x87 intake manifold absolute pressure sensor A, 1/32 kPa"
+        },
+        {
+          "did": "F40B",
+          "bytes": 1,
+          "at": 0,
+          "factor": 1,
+          "offset": 0,
+          "min": 20,
+          "max": 255,
+          "note": "OBD PID 0x0B intake manifold absolute pressure, kPa (max 255 = 1.5 bar boost)"
+        },
+        {
+          "obd": "0B",
+          "bytes": 1,
+          "at": 0,
+          "factor": 1,
+          "offset": 0,
+          "min": 20,
+          "max": 255,
+          "note": "OBD service 01 PID 0x0B (same as F40B)"
+        }
+      ],
+      "baro": [
+        {
+          "did": "F433",
+          "bytes": 1,
+          "at": 0,
+          "factor": 1,
+          "offset": 0,
+          "min": 50,
+          "max": 115,
+          "note": "OBD PID 0x33 barometric pressure, kPa (101.3 when not available)"
+        },
+        {
+          "obd": "33",
+          "bytes": 1,
+          "at": 0,
+          "factor": 1,
+          "offset": 0,
+          "min": 50,
+          "max": 115,
+          "note": "OBD service 01 PID 0x33 (same as F433)"
+        }
+      ],
+      "iat": [
+        {
+          "did": "F40F",
+          "bytes": 1,
+          "at": 0,
+          "factor": 1,
+          "offset": -40,
+          "min": -40,
+          "max": 150
+        },
+        {
+          "did": "F477",
+          "bytes": 1,
+          "at": 1,
+          "factor": 1,
+          "offset": -40,
+          "min": -40,
+          "max": 150,
+          "note": "charge air cooler temperature, bank 1 sensor 1"
+        },
+        {
+          "obd": "0F",
+          "bytes": 1,
+          "at": 0,
+          "factor": 1,
+          "offset": -40,
+          "min": -40,
+          "max": 150,
+          "note": "the same PID with OBD service 01, for engine units that refuse F40F with NRC 31"
+        }
+      ],
+      "hpfp": [
+        {
+          "did": "F423",
+          "bytes": 2,
+          "at": 0,
+          "factor": 0.1,
+          "offset": 0,
+          "min": 0,
+          "max": 500,
+          "note": "fuel rail gauge pressure (direct injection), 10 kPa per bit"
+        },
+        {
+          "did": "F459",
+          "bytes": 2,
+          "at": 0,
+          "factor": 0.1,
+          "offset": -1,
+          "min": 0,
+          "max": 500,
+          "note": "fuel rail absolute pressure, 10 kPa per bit"
+        },
+        {
+          "obd": "23",
+          "bytes": 2,
+          "at": 0,
+          "factor": 0.1,
+          "offset": 0,
+          "min": 0,
+          "max": 500,
+          "note": "OBD service 01 PID 0x23 (same as F423)"
+        }
+      ],
+      "oil": [
+        {
+          "obd": "5C",
+          "bytes": 1,
+          "at": 0,
+          "factor": 1,
+          "offset": -40,
+          "min": -40,
+          "max": 170,
+          "note": "engine oil temperature, OBD service 01 PID 0x5C - only read while the car's own signal (CDS) sends none"
+        },
+        {
+          "did": "F45C",
+          "bytes": 1,
+          "at": 0,
+          "factor": 1,
+          "offset": -40,
+          "min": -40,
+          "max": 170
+        }
+      ],
+      "stft1": [
+        {
+          "did": "F406",
+          "bytes": 1,
+          "factor": 0.78125,
+          "offset": -100,
+          "min": -100,
+          "max": 99.22
+        },
+        {
+          "obd": "06",
+          "bytes": 1,
+          "factor": 0.78125,
+          "offset": -100,
+          "min": -100,
+          "max": 99.22
+        }
+      ],
+      "stft2": [
+        {
+          "did": "F408",
+          "bytes": 1,
+          "factor": 0.78125,
+          "offset": -100,
+          "min": -100,
+          "max": 99.22
+        },
+        {
+          "obd": "08",
+          "bytes": 1,
+          "factor": 0.78125,
+          "offset": -100,
+          "min": -100,
+          "max": 99.22
+        }
+      ],
+      "timing": [
+        {
+          "obd": "0E",
+          "bytes": 1,
+          "at": 0,
+          "factor": 0.5,
+          "offset": -64,
+          "min": -64,
+          "max": 63.5,
+          "note": "OBD service 01 PID 0x0E timing advance, degrees before TDC (cylinder 1)"
+        },
+        {
+          "did": "F40E",
+          "bytes": 1,
+          "at": 0,
+          "factor": 0.5,
+          "offset": -64,
+          "min": -64,
+          "max": 63.5,
+          "note": "the same PID over UDS 0x22"
+        }
+      ],
+      "lambda": [
+        {
+          "did": "5889",
+          "bytes": 2,
+          "at": 0,
+          "factor": 0.000244140625,
+          "offset": 0,
+          "min": 0.5,
+          "max": 2,
+          "note": "BMW ILAG1 lambda actual, bank 1 (DME8 description)"
+        },
+        {
+          "did": "5640",
+          "bytes": 2,
+          "at": 0,
+          "factor": 0.00024414,
+          "offset": 0,
+          "min": 0.5,
+          "max": 2,
+          "note": "BMW lambda actual from the sensor"
+        },
+        {
+          "obd": "34",
+          "bytes": 2,
+          "at": 0,
+          "factor": 3.0517578125e-05,
+          "offset": 0,
+          "min": 0.5,
+          "max": 1.99,
+          "note": "OBD service 01 PID 0x34 lambda, bank 1 sensor 1"
+        }
+      ],
+      "lpfp": [
+        {
+          "did": "F40A",
+          "bytes": 1,
+          "at": 0,
+          "factor": 0.03,
+          "offset": 0,
+          "min": 0.5,
+          "max": 8,
+          "note": "fuel pressure (gauge), 3 kPa per bit"
+        },
+        {
+          "did": "F422",
+          "bytes": 2,
+          "at": 0,
+          "factor": 0.00079,
+          "offset": 0,
+          "min": 0.5,
+          "max": 15,
+          "note": "fuel rail pressure relative to manifold, 0.079 kPa per bit"
+        },
+        {
+          "obd": "0A",
+          "bytes": 1,
+          "at": 0,
+          "factor": 0.03,
+          "offset": 0,
+          "min": 0.5,
+          "max": 8,
+          "note": "OBD service 01 PID 0x0A (same as F40A)"
+        },
+        {
+          "did": "5463",
+          "bytes": 2,
+          "at": 0,
+          "factor": 0.001,
+          "offset": 0,
+          "min": 0.5,
+          "max": 15,
+          "note": "B58 low fuel pressure sensor, 1 hPa per bit (community PID list, not confirmed on a car)"
+        },
+        {
+          "did": "58F3",
+          "bytes": 2,
+          "at": 0,
+          "factor": 0.001,
+          "offset": 0,
+          "min": 0.5,
+          "max": 15,
+          "note": "B58 low pressure raw value, 0.1 kPa per bit (community PID list, not confirmed on a car)"
+        }
+      ],
+      "oilp": [
+        {
+          "did": "4436",
+          "bytes": 2,
+          "at": 0,
+          "factor": 0.001,
+          "offset": 0,
+          "min": 0.5,
+          "max": 12,
+          "note": "BMW oil pressure actual (absolute), hPa -> bar; shown over ambient"
+        },
+        {
+          "did": "586F",
+          "bytes": 2,
+          "at": 0,
+          "factor": 0.001,
+          "offset": 0,
+          "min": 0.5,
+          "max": 12,
+          "note": "BMW oil pressure, hPa -> bar (absolute, as Live Data treats it)"
+        }
+      ],
+      "boostTarget": [
+        {
+          "did": "4AB0",
+          "bytes": 2,
+          "at": 0,
+          "factor": 0.00390625,
+          "offset": 0,
+          "min": 20,
+          "max": 400,
+          "note": "BMW boost pressure setpoint (absolute), kPa = raw * 10 / 256 / 10"
+        }
+      ],
+      "load": [
+        {
+          "did": "5813",
+          "bytes": 1,
+          "at": 0,
+          "factor": 0.75,
+          "offset": 0,
+          "min": 0,
+          "max": 191.25,
+          "note": "BMW actual relative air charge, % = raw * 0.75"
+        }
+      ]
+    }
+  }
+}
