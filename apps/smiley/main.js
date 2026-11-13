@@ -121,6 +121,7 @@ mgu.run({async start(ctx){
         editDone:()=>{edit=null;repaint();},
         resetPeaks:()=>{telemetry.resetPeaks();repaint();},
         big:(id)=>{big=id||null;repaint();},
+        layoutNext:()=>{const o=UI.LAYOUT_ORDER,i=o.indexOf(settings.get('statsLayout'));big=null;settings.set('statsLayout',o[(i+1)%o.length]);repaint();},
         perfMode:(m)=>{perf.setMode(m);repaint();},
         resetG:()=>{perf.resetG();repaint();},
         perfHist:(d)=>{perf.histTurn(d);repaint();},
@@ -159,7 +160,7 @@ mgu.run({async start(ctx){
         const demo=settings.get('demo')==='on';
         const v={page,demo,theme:settings.get('theme'),surprises:settings.get('surprises'),gaugeStyle:settings.get('gaugeStyle'),custom:{a:settings.get('customA'),b:settings.get('customB'),bg:settings.get('customBg')},paused:session.paused,busy:session.busy||refreshPending,notice,version:ctx.spec.version,
             tempUnit:settings.get('tempUnit'),pressUnit:settings.get('pressUnit'),torqueUnit:settings.get('torqueUnit')};
-        v.big=big;v.splash=settings.get('splash')==='off'?null:Date.now()-splashAt;
+        v.big=big;v.layout=settings.get('statsLayout');v.splash=settings.get('splash')==='off'?null:Date.now()-splashAt;
         v.oilC=demo?101:telemetry.fresh('oil',30000);          // the warm-up light in the header
         v.betaGate=betaEntry===page;
         if(page===P.stats){v.stats=telemetry.snapshot(demo);v.statsPage=statsPage;v.gauges=gauges.page(statsPage);v.slots=gauges.slots;v.edit=edit;}
@@ -258,7 +259,7 @@ mgu.run({async start(ctx){
     if(!session.demo&&!session.paused)await action(refresh)();
     setInterval(()=>{
         if(flash.busy||flash.connected)return;
-        telemetry.setFocus(page===P.stats?(big?[big]:gauges.page(statsPage)):null);          // a gauge shown big is read as fast as the car answers
+        telemetry.setFocus(page===P.stats?(big?[big]:(UI.LAYOUTS[settings.get('statsLayout')]||{}).keys||gauges.page(statsPage)):null);          // a gauge shown big is read as fast as the car answers
         // the min / max keep counting while another tab is shown (four times a second is plenty)
         if(page!==P.stats&&(++peakTick%6===0))telemetry.snapshot(session.demo);
         // The first read of the engine computer can go unanswered (the car just woken, another app asking

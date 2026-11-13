@@ -238,7 +238,7 @@ function surpriseAt(now){
     return {kind,t,dur,p:t/dur,a:r(4),b:r(5)};
 }
 // the free strip: between the hint text on the left and the buttons on the right, under the cards
-const LANE={x0:600,x1:970,top:448,ground:505};
+const LANE={x0:560,x1:896,top:448,ground:505};
 // the drawing calls of cv, moved to (ox, oy) and scaled by k, so a figure drawn around 0,0 fits the strip
 const placed=(cv,ox,oy,k)=>({
     circle:(x,y,r,c)=>cv.circle(ox+x*k,oy+y*k,r*k,c), roundRect:(x,y,w,h,r,c)=>cv.roundRect(ox+x*k,oy+y*k,w*k,h*k,r*k,c),
@@ -405,6 +405,7 @@ function stats(cv,v,a) {
         torque:['TORQUE',tq(d.torque),lbft?'lb-ft':'Nm',R.torque[0],R.torque[1],0,'torque',tq], misfire:null,
     };
     const ids=v.gauges, items=ids.map((id)=>DEF[id]), pk=d.peaks||{}, base=(v.statsPage?1:0)*PER_PAGE, ed=v.edit;
+    if(v.layout&&LAYOUTS[v.layout]&&!ed&&!(v.big&&DEF[v.big])){LAYOUTS[v.layout].draw(cv,{DEF,items,pk,f,v,a,d});layoutFoot(cv,v,a,d);return;}
     if(v.big&&DEF[v.big]&&!ed){bigNumber(cv,DEF[v.big],pk[v.big],ZONES[v.big]?ZONES[v.big](f):null,TEMPS.indexOf(v.big)>=0,a);return;}
     // the pick list covers one column: the right one, or the left when the picked gauge is on the right
     const onPage=ed&&ed.picked!=null&&ed.picked>=base&&ed.picked<base+PER_PAGE, listCol=ed&&ed.picked!=null?(onPage&&(ed.picked-base)%COLS===COLS-1?0:COLS-1):-1;
@@ -453,9 +454,129 @@ function stats(cv,v,a) {
         return;
     }
     text(cv,d.boostMissingBaro?'Boost uses standard air pressure until the car reports its own':v.demo?'Demo data  ·  Nothing is sent to the car':'Tap a gauge to make it big  ·  Hold it to change what it shows',44,490,18,THEME.dim);
-    button(cv,986,456,190,'Reset min/max',a.resetPeaks,'resetPeaks',false,false);
-    button(cv,1186,456,190,'Edit gauges',a.editStart,'editStart',false,false);
-    button(cv,1386,456,190,v.statsPage?'Main gauges':'More gauges',a.statsPage,'statsPage',false,false);
+    button(cv,904,456,190,'Reset min/max',a.resetPeaks,'resetPeaks',false,false);
+    button(cv,1102,456,170,'Edit gauges',a.editStart,'editStart',false,false);
+    button(cv,1280,456,176,v.statsPage?'Main gauges':'More gauges',a.statsPage,'statsPage',false,false);
+    button(cv,1464,456,112,'Layout',a.layoutNext,'layoutNext',false,false);
+}
+/*
+ * Other layouts for Live Stats (Settings > Live Stats layout, or the Layout button): Cockpit, Race
+ * dash, Graph view and Car view. Each draws in the same area as the six gauges, uses the theme's
+ * colours, and a tap on a reading opens it in big number mode.
+ */
+const soft=(cv,x,y,w,h,r)=>cv.roundRect(x,y,w,h,r||22,withAlpha(THEME.text,0.05));
+const shown=(q)=>q[1]==null?'--':G.fmt(q[1],q[5]);
+const peakOf=(q,p,k)=>p&&isFinite(p[k])?G.fmt(q[7](p[k]),q[5]):null;
+/** One reading in a soft card: name, big number with its unit, and (tall cards) a scale line and low/high. */
+function readingCard(cv,o,key,x,y,w,h,size) {
+    const q=o.DEF[key], p=o.pk[key];
+    soft(cv,x,y,w,h);
+    text(cv,q[0],x+26,y+36,15,THEME.dim,{font:'bold',spacing:1.5});
+    const tall=h>=170, by=tall?y+108:y+h-24, s=shown(q);
+    text(cv,s,x+26,by,size,THEME.text,{font:'num'});
+    if(q[2])text(cv,q[2],x+26+cv.textWidth(s,size,{font:'num'})+10,by,Math.round(size*0.34),THEME.dim);
+    if(tall){
+        const frac=q[1]==null?0:Math.max(0,Math.min(1,(q[1]-q[3])/(q[4]-q[3])));
+        cv.roundRect(x+26,y+126,w-52,4,2,withAlpha(THEME.text,0.12));
+        if(frac>0)cv.roundRect(x+26,y+126,Math.max(4,(w-52)*frac),4,2,TEMPS.indexOf(key)>=0?TEMP_RAMP[Math.min(TEMP_RAMP.length-1,Math.floor(frac*TEMP_RAMP.length))]:THEME.accent2);
+        const lo=peakOf(q,p,'min'), hi=peakOf(q,p,'max');
+        text(cv,q[1]==null?'No data':lo!=null?'Low '+lo+'   ·   High '+hi:'',x+26,y+158,15,THEME.dim);
+    } else { const hi=peakOf(q,p,'max'); if(hi!=null)text(cv,'High '+hi,x+w-24,y+36,14,THEME.dim,{align:'right'}); }
+    if(cv.target)cv.target(x,y,w,h,()=>o.a.big(key),'big-'+key);
+}
+function cockpitLayout(cv,o) {
+    readingCard(cv,o,'oil',64,66,360,180,64);readingCard(cv,o,'coolant',64,258,360,180,64);
+    readingCard(cv,o,'torque',1176,66,360,180,64);readingCard(cv,o,'iat',1176,258,360,180,64);
+    const q=o.DEF.rpm, b=o.DEF.boost, cx=800, cy=258, r=176, th=14, A=130, span=q[4]-q[3];
+    const frac=q[1]==null?0:Math.max(0,Math.min(1,(q[1]-q[3])/span)), red=Math.max(0,Math.min(1,(ZONES.rpm()-q[3])/span));
+    cv.arc(cx,cy,r-th,r,-A,A,withAlpha(THEME.text,0.12),{round:true});
+    cv.arc(cx,cy,r-th,r,-A+2*A*red,A,withAlpha('#ff3b47',0.85),{round:true});
+    if(frac>0)cv.arc(cx,cy,r-th,r,-A,-A+2*A*frac,frac>=red?'#ff3b47':THEME.accent2,{round:true});
+    text(cv,'RPM',cx,cy-66,15,THEME.dim,{font:'bold',align:'center',spacing:3});
+    text(cv,shown(q),cx,cy+36,116,THEME.text,{font:'num',align:'center'});
+    cv.roundRect(cx-124,cy+64,248,52,26,withAlpha(THEME.text,0.08));
+    const bs=shown(b), bw=cv.textWidth(bs,26,{font:'num'}), tail=' '+b[2]+' boost', tw=cv.textWidth(tail,16,{font:'label'}), bx=cx-(bw+tw)/2;
+    text(cv,bs,bx,cy+99,26,THEME.text,{font:'num'});text(cv,tail,bx+bw,cy+99,16,THEME.dim);
+    const ex=r*Math.sin(A*Math.PI/180), ey=-r*Math.cos(A*Math.PI/180);
+    text(cv,'0',cx-ex-4,cy+ey+36,16,THEME.dim,{align:'center'});text(cv,String(Math.round(q[4]/1000)),cx+ex+4,cy+ey+36,16,THEME.dim,{align:'center'});
+    if(cv.target){cv.target(cx-r,cy-r,2*r,2*r-60,()=>o.a.big('rpm'),'big-rpm');cv.target(cx-124,cy+64,248,52,()=>o.a.big('boost'),'big-boost');}
+}
+function raceLayout(cv,o) {
+    const q=o.DEF.rpm, n=40, x0=380, x1=1556, gap=6, w=(x1-x0-gap*(n-1))/n, base=158, span=q[4]-q[3], lit=q[1]==null?0:n*(q[1]-q[3])/span;
+    text(cv,shown(q),56,base,92,THEME.text,{font:'num'});text(cv,'RPM',56+cv.textWidth(shown(q),92,{font:'num'})+14,base,15,THEME.dim,{font:'bold',spacing:1.5});
+    for(let i=0;i<n;i++){
+        const h=26+(i/(n-1))*62, hot=q[3]+span*(i/n)>=ZONES.rpm(), on=i<lit;
+        cv.roundRect(x0+i*(w+gap),base-h,w,h,5,on?(hot?'#ff3b47':THEME.accent2):withAlpha(hot?'#ff3b47':THEME.text,hot?0.28:0.1));
+    }
+    for(let k=0;k<=q[4]/1000;k++)text(cv,String(k),x0+(x1-x0)*(k*1000-q[3])/span,base+24,14,THEME.dim,{align:k===0?'left':k*1000>=q[4]?'right':'center'});
+    if(cv.target)cv.target(24,58,1552,134,()=>o.a.big('rpm'),'big-rpm');
+    ['boost','oil','coolant','iat','torque'].forEach((k,i)=>{
+        const bw=(1552-4*16)/5, x=24+i*(bw+16), y=204, h=236, c=o.DEF[k], s=shown(c);
+        soft(cv,x,y,bw,h);
+        text(cv,c[0],x+26,y+40,15,THEME.dim,{font:'bold',spacing:1.5});
+        const hi=peakOf(c,o.pk[k],'max'); if(hi!=null)text(cv,'High '+hi,x+bw-24,y+40,14,THEME.dim,{align:'right'});
+        text(cv,s,x+26,y+168,84,THEME.text,{font:'num'});
+        text(cv,c[1]==null?'No data':c[2],x+26,y+206,18,THEME.dim);
+        if(cv.target)cv.target(x,y,bw,h,()=>o.a.big(k),'big-'+k);
+    });
+}
+// Graph view keeps the last 30 seconds of every reading (two samples a second), in memory only.
+const TRACE={ms:30000,step:500,data:{},at:0};
+function graphLayout(cv,o) {
+    const now=Date.now();
+    if(now-TRACE.at>=TRACE.step||now<TRACE.at){
+        TRACE.at=now;
+        Object.keys(o.DEF).forEach((k)=>{const q=o.DEF[k];if(!q)return;const t=TRACE.data[k]||(TRACE.data[k]=[]);if(q[1]!=null)t.push([now,q[1]]);while(t.length&&now-t[0][0]>TRACE.ms)t.shift();});
+    }
+    o.items.forEach((q,i)=>{
+        const x=24+(i%COLS)*PITCH_X, y=58+Math.floor(i/COLS)*PITCH_Y, w=TILE_W, h=TILE_H;
+        soft(cv,x,y,w,h);
+        if(!q){misfires(cv,o.d,x,y,w);return;}
+        const key=q[6], s=shown(q), col=TEMPS.indexOf(key)>=0?THEME.accent:THEME.accent2, tr=TRACE.data[key]||[];
+        text(cv,q[0],x+26,y+34,15,THEME.dim,{font:'bold',spacing:1.5});
+        text(cv,s,x+26,y+84,48,THEME.text,{font:'num'});
+        if(q[2])text(cv,q[2],x+26+cv.textWidth(s,48,{font:'num'})+8,y+84,17,THEME.dim);
+        const lo=peakOf(q,o.pk[key],'min'), hi=peakOf(q,o.pk[key],'max');
+        if(hi!=null){text(cv,'high '+hi,x+w-24,y+34,14,THEME.dim,{align:'right'});text(cv,'low '+lo,x+w-24,y+56,14,THEME.dim,{align:'right'});}
+        if(q[1]==null)text(cv,'No data',x+w-24,y+84,15,THEME.dim,{align:'right'});
+        if(tr.length>1){
+            let mn=Infinity,mx=-Infinity;tr.forEach((p)=>{if(p[1]<mn)mn=p[1];if(p[1]>mx)mx=p[1];});
+            const pad=Math.max((mx-mn)*0.15,(q[4]-q[3])*0.02);mn-=pad;mx+=pad;
+            const gx=x+22, gw=w-44, top=y+100, bot=y+h-16, pts=tr.map((p)=>[gx+gw*(1-(now-p[0])/TRACE.ms),bot-(bot-top)*(q[7](p[1])-q[7](mn))/((q[7](mx)-q[7](mn))||1)]);
+            cv.fillUnder(pts,bot,withAlpha(col,0.12));cv.polyline(pts,2.5,col);
+            const e=pts[pts.length-1];cv.circle(e[0],e[1],4.5,col);
+        }
+        if(cv.target)cv.target(x,y,w,h,()=>o.a.big(key),'big-'+key);
+    });
+}
+function carLayout(cv,o) {
+    ['boost','oil','coolant'].forEach((k,i)=>readingCard(cv,o,k,44,66+i*128,300,112,46));
+    ['rpm','torque','iat'].forEach((k,i)=>readingCard(cv,o,k,1256,66+i*128,300,112,46));
+    // a plain top view of a sedan, front to the left
+    const X=420, Y=78, front=THEME.accent2, rear=THEME.accent;
+    cv.roundRect(X+40,Y+55,680,220,95,THEME.card);cv.strokeRoundRect(X+40,Y+55,680,220,95,3,THEME.panelEdge);
+    cv.roundRect(X+250,Y+82,300,166,46,THEME.bg);cv.strokeRoundRect(X+250,Y+82,300,166,46,2,THEME.panelEdge);
+    cv.quad([[X+250,Y+100],[X+205,Y+86],[X+205,Y+244],[X+250,Y+230]],THEME.track);
+    cv.quad([[X+550,Y+104],[X+590,Y+92],[X+590,Y+238],[X+550,Y+226]],THEME.track);
+    [[120,30,front],[120,270,front],[540,30,rear],[540,270,rear]].forEach((t)=>{cv.roundRect(X+t[0],Y+t[1],110,30,10,THEME.track);cv.strokeRoundRect(X+t[0],Y+t[1],110,30,10,2,t[2]);});
+    cv.strokeRoundRect(X+95,Y+118,96,94,12,2,front);text(cv,'ENGINE',X+143,Y+171,15,front,{font:'bold',align:'center',spacing:2});
+    cv.line(X+175,Y+60,X+175,Y+118,2,front);cv.line(X+175,Y+212,X+175,Y+270,2,front);cv.line(X+595,Y+60,X+595,Y+270,2,rear);cv.line(X+191,Y+165,X+595,Y+165,3,THEME.panelEdge);
+    text(cv,'FRONT',X+175,Y+18,16,front,{font:'bold',align:'center',spacing:2});text(cv,'REAR',X+595,Y+18,16,rear,{font:'bold',align:'center',spacing:2});
+    const load=o.DEF.load;
+    text(cv,'Engine load '+shown(load)+(load[1]==null?'':' %'),X+380,Y+336,17,THEME.dim,{align:'center'});
+}
+const LAYOUTS={
+    cockpit:{name:'Cockpit',draw:cockpitLayout,keys:['rpm','boost','oil','coolant','iat','torque']},
+    race:{name:'Race dash',draw:raceLayout,keys:['rpm','boost','oil','coolant','iat','torque']},
+    graphs:{name:'Graph view',draw:graphLayout,keys:null},
+    car:{name:'Car view',draw:carLayout,keys:['rpm','boost','oil','coolant','iat','torque','load']},
+};
+const LAYOUT_ORDER=['grid','cockpit','race','graphs','car'];
+function layoutFoot(cv,v,a,d) {
+    text(cv,'Tap a reading to make it big   ·   Layout: '+LAYOUTS[v.layout].name,44,490,18,THEME.dim);
+    button(cv,v.layout==='graphs'?1082:1262,456,190,'Reset min/max',a.resetPeaks,'resetPeaks',false,false);
+    if(v.layout==='graphs')button(cv,1280,456,176,v.statsPage?'Main gauges':'More gauges',a.statsPage,'statsPage',false,false);
+    button(cv,1464,456,112,'Layout',a.layoutNext,'layoutNext',false,false);
 }
 /*
  * Big number mode: one gauge over the whole page, readable at a glance. The number, its lowest and
@@ -677,7 +798,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.2.2 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.2.3 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
@@ -893,4 +1014,4 @@ function brakePage(cv,p) {
     });
     text(cv,r?'Peak '+r.peakG.toFixed(2)+' g':'',620,438,20,THEME.dim);
 }
-module.exports={warmup,SPLASH,draw,W,H,TABS,THEME,PAGE,slotAt,setTheme,PALETTES,surpriseAt,SURPRISES};
+module.exports={warmup,SPLASH,LAYOUTS,LAYOUT_ORDER,draw,W,H,TABS,THEME,PAGE,slotAt,setTheme,PALETTES,surpriseAt,SURPRISES};

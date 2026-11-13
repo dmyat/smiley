@@ -2,6 +2,16 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.2.3
+
+- **Four new layouts for Live Stats**, next to the six gauges: Cockpit (one
+  large RPM ring with boost inside and four readings around it), Race dash
+  (rising rev bars and five big numbers), Graph view (the last 30 seconds of
+  each reading as a line) and Car view (readings around a top view of a car).
+- A **Layout** button on Live Stats steps through them; Settings has the same
+  choice. Six gauges stays the default.
+- A tap on any reading in any layout opens it in big number mode.
+
 ## 0.2.2
 
 - The start-up animation plays once, when the app starts, and not again when
