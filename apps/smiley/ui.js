@@ -312,7 +312,7 @@ function connectPage(cv,v,a) {
     button(cv,44,418,260,f.connected?'Disconnect':f.demo?'Connect demo':'Connect ECU',a.flashConnect,'flashConnect',!f.connected,f.busy||f.recovery);
     button(cv,320,418,260,'Open Flash',a.openFlash,'openFlash',false,f.busy);
     button(cv,596,418,322,'Resume diagnostics',a.flashResume,'flashResume',false,f.busy||f.connected||!v.paused||f.recovery);
-    clipped(cv,f.connectionError||(f.recovery?'An unfinished flash needs recovery review.':f.connected&&!f.demo?'Other SMILEY diagnostics stay paused while connected.':f.demo?'Demo uses the same checks and progress workflow.':'Place your connection setup in flash/connect.json before connecting.'),44,500,19,f.connectionError||f.recovery?THEME.warn:THEME.dim,1500);
+    clipped(cv,f.connectionError||(f.recovery?'An unfinished flash needs recovery review.':f.connected&&!f.demo?'The rest of this app stays paused while connected.':f.demo?'Demo uses the same checks and progress workflow.':'Place your connection setup in flash/connect.json before connecting.'),44,500,19,f.connectionError||f.recovery?THEME.warn:THEME.dim,1500);
 }
 function flashPage(cv,v,a) {
     const f=v.flash;
@@ -500,8 +500,8 @@ function maps(cv,v,a) {
     text(cv,'Flashing from this app is not supported',1066,196,19,THEME.warn);
     text(cv,'Use your MHD or bootmod3 app to flash.',1066,230,19,THEME.dim);
     text(cv,'Before you flash or log with another app,',1066,300,18,THEME.dim);
-    text(cv,'pause SMILEY so it stays out of the way.',1066,326,18,THEME.dim);
-    button(cv,1066,376,460,v.paused?'Resume SMILEY':'Pause SMILEY',a.pause,'pause',v.paused,v.busy||v.demo);
+    text(cv,'pause this app so it stays out of the way.',1066,326,18,THEME.dim);
+    button(cv,1066,376,460,v.paused?'Resume this app':'Pause this app',a.pause,'pause',v.paused,v.busy||v.demo);
 }
 function faults(cv,v,a) {
     const car=v.faultScope==='car';
@@ -549,7 +549,7 @@ function phone(cv,v,a) {
     button(cv,335,365,390,v.phone.running?'Stop phone access':'Start phone access',a.phone,'phone',v.phone.running,false);
     text(cv,'HOW TO CONNECT',880,218,18,THEME.accent2,{font:'bold',spacing:1});
     ['1.  Join the car Wi-Fi on your phone.','2.  Press Start phone access.','3.  Scan the code with your phone camera.'].forEach((line,i)=>text(cv,line,880,262+i*36,20,THEME.text));
-    text(cv,'Needs SMILEY Phone Access, installed once from the Store.',880,392,18,THEME.dim);
+    text(cv,'Needs the Phone Access helper, installed once from the Store.',880,392,18,THEME.dim);
 }
 const GO='#86c3a0';
 const secs=(n)=>typeof n==='number'&&isFinite(n)?n.toFixed(2):'--.--';
@@ -564,7 +564,7 @@ const NOTES=[['Waiting for the diagnostic link','Connecting to the car...'],['No
     ['drive without switching the ignition off','Drive without turning the car off'],['xDrive off','2WD is on'],['the transfer case reports it','confirmed by the car']];
 /** Info: what the app knows about the car and itself. Read once at start-up; nothing is sent from here. */
 function info(cv,v) {
-    heading(cv,'INFO','Read from the car when SMILEY started. Nothing is sent from this page.');
+    heading(cv,'INFO','Read from the car when the app started. Nothing is sent from this page.');
     const rows=v.info||[];
     rows.forEach((r,i)=>{
         const col=i%2, row=Math.floor(i/2), x=44+col*766, y=160+row*76;
@@ -600,7 +600,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.14 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.15 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
@@ -611,7 +611,7 @@ function watermark(cv,v) {
 function perf(cv,v,a) {
     const p=v.perf, names={drag:'Drag timer',g:'G-meter',dyno:'Dyno',brake:'Brake test'};
     titled(cv,'PERFORMANCE','perf');
-    text(cv,p.demo?'Demo drive - results are not saved':'Works while SMILEY is open. Closed roads only.',44,130,19,p.demo?THEME.warn:THEME.dim);
+    text(cv,p.demo?'Demo drive - results are not saved':'Works while the app is open. Closed roads only.',44,130,19,p.demo?THEME.warn:THEME.dim);
     Object.keys(names).forEach((k,i)=>button(cv,760+i*202,73,192,names[k],()=>a.perfMode(k),'perf'+k,p.mode===k,false));
     if(p.mode==='drag')dragPage(cv,p);
     if(p.mode==='g')gPage(cv,p,a);

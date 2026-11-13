@@ -51,7 +51,7 @@ function infoRows(o) {
     rows.push(['Tune', o.demo ? null : tune]);
     rows.push(['Car connection', o.demo ? 'Demo mode' : o.linked ? 'Connected' : 'Not connected']);
     rows.push(['Car Wi-Fi address', o.wifi || 'Hotspot is off']);
-    rows.push(['SMILEY version', o.version]);
+    rows.push(['App version', o.version]);
     return rows.map((r) => ({ label: r[0], value: r[1] == null || r[1] === '' ? '--' : String(r[1]) }));
 }
 module.exports = { infoRows, readParts, parseSvk };

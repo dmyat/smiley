@@ -38,13 +38,13 @@ mgu.run({async start(ctx){
     // Single underlying transport. Demo/pause checks also apply to upstream modules.
     const rawPhysical=link.diag.physical.bind(link.diag);
     link.diag.physical=function(){
-        if(session.demo||session.paused)return Promise.reject(new Error(session.demo?'Demo mode: nothing is sent to the car':'SMILEY is paused'));
+        if(session.demo||session.paused)return Promise.reject(new Error(session.demo?'Demo mode: nothing is sent to the car':'This app is paused'));
         return rawPhysical.apply(null,arguments);
     };
     // the whole-car scan and clear go to every unit at once: the same demo / pause gate
     const rawFunctional=link.diag.functional?link.diag.functional.bind(link.diag):null;
     link.diag.functional=function(){
-        if(session.demo||session.paused)return Promise.reject(new Error(session.demo?'Demo mode: nothing is sent to the car':'SMILEY is paused'));
+        if(session.demo||session.paused)return Promise.reject(new Error(session.demo?'Demo mode: nothing is sent to the car':'This app is paused'));
         if(!rawFunctional)return Promise.reject(new Error('This car connection cannot scan the whole car'));
         return rawFunctional.apply(null,arguments);
     };

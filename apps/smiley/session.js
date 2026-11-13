@@ -11,7 +11,7 @@ class Session {
     get busy() { return this.pending > 0; }
     _gate(allowPaused) {
         if (this.demo) throw new Error('Demo mode: nothing is sent to the car');
-        if (this.paused && !allowPaused) throw new Error('SMILEY is paused');
+        if (this.paused && !allowPaused) throw new Error('This app is paused');
     }
     _enqueue(fn) {
         this.pending++;
