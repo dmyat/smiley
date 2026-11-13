@@ -26,7 +26,7 @@ const isNum = (x) => typeof x === 'number' && isFinite(x);
 const MODES = ['drag', 'g', 'dyno', 'brake', 'history'];
 const KEEP_DAYS = 30, KEEP_MS = KEEP_DAYS * 86400000;   // the history keeps a month
 const HIST_MAX = 600;                                    // and never more than this many, so the file stays small
-const HIST_ROWS = 6;                                     // rows on one history page
+const HIST_ROWS = 4;                                     // rows on one history page
 const CLOCK_OK = Date.UTC(2024, 0, 1);                   // a head unit that has not got the time yet deletes nothing
 
 const DRAG_SPLITS = {

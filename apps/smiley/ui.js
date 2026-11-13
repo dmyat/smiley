@@ -611,7 +611,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.24 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.25 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
@@ -644,32 +644,38 @@ function ago(ms) {
     if(m<1440)return Math.floor(m/60)+' h ago';
     const d=Math.floor(m/1440);return d===1?'1 day ago':d+' days ago';
 }
-function historyLine(e,v) {
-    const mph=e.unit!=='kmh', sep='   ·   ';
+/** One entry in plain words: [the headline, the rest]. Shown in the units the run was made in. */
+function historyWords(e,v) {
+    const mph=e.unit!=='kmh', sU=mph?' mph':' km/h', sep='   ·   ', sp=(k)=>(mph?k/1.609344:k).toFixed(0)+sU;
     if(e.kind==='dyno'){
         const lbft=v.torqueUnit==='lbft';
-        return (e.peakP/745.7).toFixed(0)+' hp at '+e.peakPrpm+' rpm'+sep+(lbft?e.peakT*0.73756:e.peakT).toFixed(0)+(lbft?' lb-ft':' Nm')+' at '+e.peakTrpm+' rpm';
+        return [(e.peakP/745.7).toFixed(0)+' horsepower',(lbft?e.peakT*0.73756:e.peakT).toFixed(0)+(lbft?' lb-ft':' Nm')+' of torque at '+e.peakTrpm+' rpm'+sep+'most power at '+e.peakPrpm+' rpm'];
     }
+    const name=(k)=>k==='qm'?'Quarter mile':(SPLIT_NAMES[k]||k).replace(/ (mph|km\/h)$/,'').replace('-',' to ')+sU;
     const keys=Object.keys(e.result||{});
-    if(e.kind==='brake')return keys.map((k)=>{const r=e.result[k];return (SPLIT_NAMES[k]||k)+'  '+(mph?r.m*3.28084:r.m).toFixed(1)+(mph?' ft':' m')+' in '+r.s.toFixed(2)+' s';}).join(sep)+(e.peakG?sep+e.peakG.toFixed(2)+' g':'');
-    return keys.map((k)=>{
-        const trap=k==='qm'&&e.trap&&e.trap[k]!=null?' at '+(mph?e.trap[k]/1.609344:e.trap[k]).toFixed(0)+(mph?' mph':' km/h'):'';
-        return (SPLIT_NAMES[k]||k)+'  '+e.result[k].toFixed(2)+' s'+trap;
-    }).join(sep)+(e.rollout?sep+'rollout':'');
+    if(e.kind==='brake'){
+        const one=(k)=>{const r=e.result[k], from=(SPLIT_NAMES[k]||k).split('-')[0];return 'Stopped from '+from+sU+' in '+(mph?r.m*3.28084:r.m).toFixed(0)+(mph?' feet':' metres');};
+        const low=keys[keys.length-1];
+        return [one(low),['took '+e.result[low].s.toFixed(1)+' seconds'].concat(keys.slice(0,-1).map(one)).concat(e.peakG?['hardest braking '+e.peakG.toFixed(2)+' g']:[]).join(sep)];
+    }
+    const one=(k)=>name(k)+' in '+e.result[k].toFixed(2)+' seconds'+(k==='qm'&&e.trap&&e.trap[k]!=null?' at '+sp(e.trap[k]):'');
+    return [keys.length?one(keys[0]):'',keys.slice(1).map(one).concat(e.peakG?['launch '+e.peakG.toFixed(2)+' g']:[]).concat(e.rollout?['with one-foot rollout']:[]).join(sep)];
 }
 function historyPage(cv,p,v,a) {
-    const h=p.history, kinds={drag:['DRAG',THEME.accent],dyno:['DYNO',THEME.cold],brake:['BRAKE',THEME.accent2]};
+    const h=p.history, kinds={drag:['DRAG RUN',THEME.accent],dyno:['DYNO PULL',THEME.cold],brake:['BRAKE TEST',THEME.accent2]};
     card(cv,44,160,1512,300,16);
-    text(cv,'WHEN',74,194,15,THEME.dim,{font:'bold',spacing:1});text(cv,'TEST',340,194,15,THEME.dim,{font:'bold',spacing:1});text(cv,'RESULT',470,194,15,THEME.dim,{font:'bold',spacing:1});
-    if(!h.count)text(cv,'Nothing yet. Every drag run, dyno pull and brake test is listed here.',800,300,24,THEME.dim,{align:'center'});
+    if(!h.count)text(cv,'Nothing yet. Every drag run, dyno pull and brake test will show up here.',800,290,24,THEME.dim,{align:'center'});
+    const today=new Date(h.now), day=(d)=>d.getFullYear()*372+d.getMonth()*31+d.getDate();
     h.rows.forEach((e,i)=>{
-        const y=232+i*33, d=new Date(e.at), k=kinds[e.kind]||[String(e.kind).toUpperCase(),THEME.dim];
-        cv.fillRect(74,y-25,1452,1,THEME.panelEdge);
-        text(cv,MONTHS[d.getMonth()]+' '+d.getDate(),74,y,20,THEME.text);text(cv,ago(h.now-e.at),160,y,17,THEME.dim);
-        text(cv,k[0],340,y,17,k[1],{font:'bold',spacing:1});
-        text(cv,historyLine(e,v).slice(0,96),470,y,20,THEME.text);
+        const y=170+i*57, d=new Date(e.at), k=kinds[e.kind]||[String(e.kind).toUpperCase(),THEME.dim], w=historyWords(e,v), gap=day(today)-day(d);
+        if(i)cv.fillRect(74,y,1452,1,THEME.panelEdge);
+        cv.roundRect(74,y+11,6,38,3,k[1]);
+        text(cv,k[0],96,y+28,20,k[1],{font:'bold',spacing:1});
+        text(cv,(gap===0?'Today':gap===1?'Yesterday':MONTHS[d.getMonth()]+' '+d.getDate())+(gap>1?'   ·   '+ago(h.now-e.at):gap===0?'   ·   '+ago(h.now-e.at):''),96,y+49,16,THEME.dim);
+        text(cv,w[0],380,y+30,27,THEME.text,{font:'bold'});
+        text(cv,w[1].slice(0,140),380,y+50,17,THEME.dim);
     });
-    text(cv,'Kept for '+h.days+' days, then deleted automatically.'+(h.count?'   '+h.count+' saved   ·   page '+(h.page+1)+' of '+h.pages:''),74,440,16,THEME.dim);
+    text(cv,'Saved for '+h.days+' days, then deleted for you.'+(h.pages>1?'   Page '+(h.page+1)+' of '+h.pages:''),74,440,16,THEME.dim);
     if(h.pages>1){
         button(cv,1206,404,160,'Newer',()=>a.perfHist(-1),'histNewer',false,h.page===0);
         button(cv,1376,404,160,'Older',()=>a.perfHist(1),'histOlder',false,h.page>=h.pages-1);

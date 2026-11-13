@@ -313,7 +313,7 @@ async function run(){
   clock=0;const cold=new Perf(null,perfSettings(),fs.mkdtempSync(path.join(tmp,'perf-')),quiet);cold.hist=[{at:T0,kind:'dyno',peakP:1,peakPrpm:1,peakT:1,peakTrpm:1}];cold.now=()=>5;cold.idle(0);assert.equal(cold.hist.length,1,'a head unit without the time deletes nothing');
   const d2=fs.mkdtempSync(path.join(tmp,'perf-')),demo=new Perf(null,perfSettings(),d2,quiet);t=0;for(let i=0;i<30;i++){demo.sample({speed:0,gLong:0.6,rpm:3000,demo:true},t);t+=50;}for(let v=0;v<=120;v+=1.2){demo.sample({speed:v,gLong:0.6,rpm:3000,demo:true},t);t+=50;}for(let i=0;i<10;i++){demo.sample({speed:80,gLong:0.6,rpm:3000,demo:true},t);t+=50;}
   assert(demo.view(t).history.count>0);assert(!fs.existsSync(path.join(d2,'perf-history.json')),'demo runs are not saved');
-  for(let i=0;i<20;i++)demo.record({kind:'dyno',peakP:300000,peakPrpm:5800,peakT:500,peakTrpm:2400});const v1=demo.view(t).history;assert.equal(v1.rows.length,6);assert(v1.pages>1);demo.histTurn(1);assert.equal(demo.view(t).history.page,1);demo.histTurn(-5);assert.equal(demo.view(t).history.page,0);
+  for(let i=0;i<20;i++)demo.record({kind:'dyno',peakP:300000,peakPrpm:5800,peakT:500,peakTrpm:2400});const v1=demo.view(t).history;assert.equal(v1.rows.length,4);assert(v1.pages>1);demo.histTurn(1);assert.equal(demo.view(t).history.page,1);demo.histTurn(-5);assert.equal(demo.view(t).history.page,0);
  });
  console.log(passed+' SMILEY integration checks passed. No vehicle connected.');
 }
