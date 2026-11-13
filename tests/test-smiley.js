@@ -322,6 +322,11 @@ async function run(){
   assert.equal(W(60,'c').state,'warming');assert.equal(W(70,'c').text,'WARMING UP 70°C');assert.equal(W(84.9,'f').state,'warming');
   assert.equal(W(85,'f').state,'ready');assert.equal(W(110,'c').text,'WARMED UP');
  });
+ await test('Start-up animation lasts under two seconds and can be switched off',async()=>{
+  const U=require(path.join(APP,'ui'));assert(U.SPLASH.ms>1000&&U.SPLASH.ms<2000&&U.SPLASH.hold<U.SPLASH.ms);
+  const spec=JSON.parse(fs.readFileSync(path.join(__dirname,'../apps/smiley/app.json'),'utf8')), all=JSON.stringify(spec);
+  assert(all.includes('"key":"splash"')||all.includes('"key": "splash"'));
+ });
  console.log(passed+' SMILEY integration checks passed. No vehicle connected.');
 }
 run().catch((e)=>{console.error(e.stack);process.exitCode=1;});

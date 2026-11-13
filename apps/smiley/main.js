@@ -81,10 +81,11 @@ mgu.run({async start(ctx){
             try{parts=await readParts(link);}catch(e){log.warn('parts list: '+String(e&&e.message||e));}});
         refreshPending=false;
     }
+    let big=null,splashAt=Date.now(),hiddenAt=0;          // the gauge shown full screen; when the start-up animation began
     function setPage(i){
         if(flash.programming){page=P.flash;repaint();return;}
         betaEntry=i===P.connect||i===P.flash?i:null;
-        edit=null;page=i;faults.cancelConfirm();flash.confirmUntil=0;notice='';repaint();
+        edit=null;big=null;page=i;faults.cancelConfirm();flash.confirmUntil=0;notice='';repaint();
     }
     const acts={
         tuner:(name)=>action(async()=>{
@@ -111,7 +112,7 @@ mgu.run({async start(ctx){
         faultScope:(scope)=>{if(session.busy)return;faults.setScope(scope);faultPage=0;notice='';repaint();},
         statsPage:()=>{statsPage=statsPage?0:1;repaint();},
         // Edit gauges: pick one, then tap another to swap them, or Change to bring in a different gauge.
-        editStart:()=>{edit={picked:null};repaint();},
+        editStart:()=>{big=null;edit={picked:null};repaint();},
         // a tap on a gauge opens the list for it (again: closes it); a tap in the list puts that gauge there
         editTap:(slot)=>{if(!edit)return;edit.picked=edit.picked===slot?null:slot;repaint();},
         editSet:(id)=>{if(edit&&edit.picked!=null){gauges.set(edit.picked,id);edit.picked=null;repaint();}},
@@ -119,6 +120,7 @@ mgu.run({async start(ctx){
         editReset:()=>{gauges.reset();if(edit)edit.picked=null;repaint();},
         editDone:()=>{edit=null;repaint();},
         resetPeaks:()=>{telemetry.resetPeaks();repaint();},
+        big:(id)=>{big=id||null;repaint();},
         perfMode:(m)=>{perf.setMode(m);repaint();},
         resetG:()=>{perf.resetG();repaint();},
         perfHist:(d)=>{perf.histTurn(d);repaint();},
@@ -157,6 +159,7 @@ mgu.run({async start(ctx){
         const demo=settings.get('demo')==='on';
         const v={page,demo,theme:settings.get('theme'),surprises:settings.get('surprises'),gaugeStyle:settings.get('gaugeStyle'),custom:{a:settings.get('customA'),b:settings.get('customB'),bg:settings.get('customBg')},paused:session.paused,busy:session.busy||refreshPending,notice,version:ctx.spec.version,
             tempUnit:settings.get('tempUnit'),pressUnit:settings.get('pressUnit'),torqueUnit:settings.get('torqueUnit')};
+        v.big=big;v.splash=settings.get('splash')==='off'?null:Date.now()-splashAt;
         v.oilC=demo?101:telemetry.fresh('oil',30000);          // the warm-up light in the header
         v.betaGate=betaEntry===page;
         if(page===P.stats){v.stats=telemetry.snapshot(demo);v.statsPage=statsPage;v.gauges=gauges.page(statsPage);v.slots=gauges.slots;v.edit=edit;}
@@ -196,7 +199,7 @@ mgu.run({async start(ctx){
                     down={x,y};held=false;clearTimeout(holdTimer);
                     holdTimer=setTimeout(()=>{
                         holdTimer=null;
-                        if(!down||page!==P.stats||edit)return;
+                        if(!down||page!==P.stats||edit||big)return;
                         const slot=UI.slotAt(down.x,down.y);if(slot<0)return;
                         held=true;disp.ownDown=null;edit={picked:statsPage*PER_PAGE+slot};repaint();
                     },650);
@@ -249,13 +252,13 @@ mgu.run({async start(ctx){
         if(['hold','closeLimit','arm'].includes(key))auto.settingsChanged(key).catch((e)=>log.warn(String(e)));
         repaint();
     });
-    if(ui.onVisible)ui.onVisible((name,on)=>{if(name==='MAIN')visible=on;});
+    if(ui.onVisible)ui.onVisible((name,on)=>{if(name!=='MAIN')return;if(!on)hiddenAt=Date.now();else if(!visible&&hiddenAt&&Date.now()-hiddenAt>300000)splashAt=Date.now();visible=on;});          // the animation plays again after five minutes away
     link.onAvailable((on)=>{refreshPending=!!on&&!session.demo;identTries=0;identAt=Date.now();telemetry.times={};tune._reset();controller.state.accepted=null;controller.state.confirmed='UNKNOWN';});
     // No map/exhaust/fault-clear action at startup. Tuners and exhaust ship disabled.
     if(!session.demo&&!session.paused)await action(refresh)();
     setInterval(()=>{
         if(flash.busy||flash.connected)return;
-        telemetry.setFocus(page===P.stats?gauges.page(statsPage):null);
+        telemetry.setFocus(page===P.stats?(big?[big]:gauges.page(statsPage)):null);          // a gauge shown big is read as fast as the car answers
         // the min / max keep counting while another tab is shown (four times a second is plenty)
         if(page!==P.stats&&(++peakTick%6===0))telemetry.snapshot(session.demo);
         // The first read of the engine computer can go unanswered (the car just woken, another app asking

@@ -166,6 +166,27 @@ function warmup(oilC,tempUnit) {
     if(oilC<WARM.ready)return {state:'warming',text:'WARMING UP '+shown,color:'#f0b24a'};
     return {state:'ready',text:'WARMED UP',color:'#86c3a0'};
 }
+/*
+ * Start-up animation, about a second and a half when the app opens: the name is written out letter by
+ * letter over the theme's background, a line draws itself under it, PERFORMANCE fades in, and the
+ * whole thing fades away to the page underneath. ms: time since the app opened.
+ */
+const SPLASH={ms:1700,hold:1150};
+function splash(cv,ms) {
+    const out=ms<=SPLASH.hold?1:Math.max(0,1-(ms-SPLASH.hold)/(SPLASH.ms-SPLASH.hold)), ease=(x)=>{x=Math.max(0,Math.min(1,x));return 1-Math.pow(1-x,3);};
+    cv.fillRect(0,0,W,H,withAlpha(THEME.bg,out));
+    const word='SMILEY', size=120, o={font:'bold',spacing:18}, full=cv.textWidth(word,size,o);
+    let x=800-full/2;
+    for(let i=0;i<word.length;i++){
+        const k=ease((ms-80-i*85)/260), ch=word[i];
+        if(k>0)cv.text(ch,x,278-(1-k)*22,size,withAlpha(THEME.text,k*out),{font:'bold'});
+        x+=cv.textWidth(ch,size,{font:'bold'})+18;
+    }
+    const line=ease((ms-520)/420)*full;
+    if(line>0)cv.fillRect(800-line/2,306,line,4,withAlpha(THEME.accent,out));
+    const sub=ease((ms-760)/300);
+    if(sub>0)cv.text('PERFORMANCE',800,356,26,withAlpha(THEME.accent2||THEME.accent,sub*out),{font:'bold',spacing:12,align:'center'});
+}
 function draw(cv, v, act) {
     setTheme(v.theme,v.custom);
     cv.clear(THEME.bg);
@@ -185,6 +206,7 @@ function draw(cv, v, act) {
         else if(v.page===PAGE.connect)connectPage(cv,v,act);
         else flashPage(cv,v,act);
     }
+    const splashing=typeof v.splash==='number'&&v.splash<SPLASH.ms;
     if(v.notice) { cv.fillRect(24,475,1552,39,THEME.noticeBg); text(cv,v.notice.slice(0,135),44,501,19,THEME.warn); }
     else watermark(cv,v);
     // Snow and surprises move every frame, so they are drawn only on the GPU renderer (cv.place is set
@@ -196,6 +218,7 @@ function draw(cv, v, act) {
         // never cover a gauge, a button or a line of text; not while a message or the gauge editor is up
         if(v.surprises!=='off'&&!v.notice&&!v.edit&&(v.page===PAGE.stats||v.page===PAGE.perf||v.page===PAGE.info)) drawSurprise(cv,surpriseAt(now));
     }
+    if(splashing)splash(cv,v.splash);
 }
 // Christmas surprises: now and then something festive plays for a few seconds in the empty strip at
 // the bottom middle of the page (LANE) - Santa's sleigh behind two reindeer rises into it, flies along
@@ -382,6 +405,7 @@ function stats(cv,v,a) {
         torque:['TORQUE',tq(d.torque),lbft?'lb-ft':'Nm',R.torque[0],R.torque[1],0,'torque',tq], misfire:null,
     };
     const ids=v.gauges, items=ids.map((id)=>DEF[id]), pk=d.peaks||{}, base=(v.statsPage?1:0)*PER_PAGE, ed=v.edit;
+    if(v.big&&DEF[v.big]&&!ed){bigNumber(cv,DEF[v.big],pk[v.big],ZONES[v.big]?ZONES[v.big](f):null,TEMPS.indexOf(v.big)>=0,a);return;}
     // the pick list covers one column: the right one, or the left when the picked gauge is on the right
     const onPage=ed&&ed.picked!=null&&ed.picked>=base&&ed.picked<base+PER_PAGE, listCol=ed&&ed.picked!=null?(onPage&&(ed.picked-base)%COLS===COLS-1?0:COLS-1):-1;
     // The six cards and their names change only when the layout does: drawn once into a layer the
@@ -400,6 +424,7 @@ function stats(cv,v,a) {
             if(cv.target)cv.target(x,y,TILE_W,TILE_H,()=>a.editTap(base+i),'slot'+i);
         }
         if(!q){misfires(cv,d,x,y,TILE_W);return;}
+        if(!ed&&cv.target)cv.target(x,y,TILE_W,TILE_H,()=>a.big(q[6]),'big-'+q[6]);          // a tap opens the gauge full screen
         // the fast readings as signal bars and the rest as dials, unless Settings asks for all of one kind;
         // the temperatures run blue (cold) to red (hot) in either shape
         const isTemp=TEMPS.indexOf(q[6])>=0, asBar=v.gaugeStyle==='bar'||(v.gaugeStyle!=='dial'&&BARS.indexOf(q[6])>=0);
@@ -427,10 +452,37 @@ function stats(cv,v,a) {
         button(cv,1336,456,240,'Done',a.editDone,'editDone',true,false);
         return;
     }
-    text(cv,d.boostMissingBaro?'Boost uses standard air pressure until the car reports its own':v.demo?'Demo data  ·  Nothing is sent to the car':'Hold a gauge to change what it shows',44,490,18,THEME.dim);
+    text(cv,d.boostMissingBaro?'Boost uses standard air pressure until the car reports its own':v.demo?'Demo data  ·  Nothing is sent to the car':'Tap a gauge to make it big  ·  Hold it to change what it shows',44,490,18,THEME.dim);
     button(cv,986,456,190,'Reset min/max',a.resetPeaks,'resetPeaks',false,false);
     button(cv,1186,456,190,'Edit gauges',a.editStart,'editStart',false,false);
     button(cv,1386,456,190,v.statsPage?'Main gauges':'More gauges',a.statsPage,'statsPage',false,false);
+}
+/*
+ * Big number mode: one gauge over the whole page, readable at a glance. The number, its lowest and
+ * highest so far, and a bar that shows where it sits on the gauge's scale (red from the red line).
+ * A tap anywhere goes back to the six gauges.
+ */
+function bigNumber(cv,q,p,redFrom,isTemp,a) {
+    const val=q[1], lo=p&&isFinite(p.min)?q[7](p.min):null, hi=p&&isFinite(p.max)?q[7](p.max):null;
+    const over=val!=null&&redFrom!=null&&val>=redFrom, frac=val==null?0:Math.max(0,Math.min(1,(val-q[3])/(q[4]-q[3])));
+    const col=over?THEME.crit||'#ff3b47':THEME.text;
+    card(cv,24,58,1552,386,16);
+    text(cv,q[0],800,112,30,THEME.accent2,{font:'bold',align:'center',spacing:4});
+    text(cv,val==null?'--':G.fmt(val,q[5]),800,322,230,col,{font:'num',align:'center'});
+    if(q[2])text(cv,q[2],800,372,30,THEME.dim,{align:'center'});
+    if(val==null)text(cv,'NO DATA',800,372,22,THEME.dim,{font:'bold',align:'center',spacing:2});
+    if(lo!=null){text(cv,'LOWEST',84,196,16,THEME.dim,{font:'bold',spacing:2});text(cv,G.fmt(lo,q[5]),84,262,64,THEME.text,{font:'num'});}
+    if(hi!=null){text(cv,'HIGHEST',1516,196,16,THEME.dim,{font:'bold',spacing:2,align:'right'});text(cv,G.fmt(hi,q[5]),1516,262,64,THEME.accent,{font:'num',align:'right'});}
+    // where the reading sits on its scale
+    const bx=84, bw=1432, by=400, bh=14;
+    cv.roundRect(bx,by,bw,bh,7,THEME.track);
+    if(redFrom!=null){const rf=Math.max(0,Math.min(1,(redFrom-q[3])/(q[4]-q[3])));cv.roundRect(bx+bw*rf,by,bw*(1-rf),bh,7,withAlpha('#ff3b47',0.35));}
+    if(frac>0)cv.roundRect(bx,by,Math.max(bh,bw*frac),bh,7,over?'#ff3b47':isTemp?TEMP_RAMP[Math.min(TEMP_RAMP.length-1,Math.floor(frac*TEMP_RAMP.length))]:THEME.accent2);
+    text(cv,G.fmt(q[3],0),bx,by-10,15,THEME.dim);text(cv,G.fmt(q[4],0),bx+bw,by-10,15,THEME.dim,{align:'right'});
+    if(cv.target)cv.target(24,58,1552,386,()=>a.big(null),'bigClose');
+    text(cv,'Tap anywhere to go back',44,490,18,THEME.dim);
+    button(cv,1186,456,190,'Reset min/max',a.resetPeaks,'resetPeaks',false,false);
+    button(cv,1386,456,190,'All gauges',()=>a.big(null),'bigBack',true,false);
 }
 /** Which gauge card (0-5) is at a point of the Live Stats page, or -1. */
 function slotAt(x,y) {
@@ -625,7 +677,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.2.0 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.2.1 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
@@ -841,4 +893,4 @@ function brakePage(cv,p) {
     });
     text(cv,r?'Peak '+r.peakG.toFixed(2)+' g':'',620,438,20,THEME.dim);
 }
-module.exports={warmup,draw,W,H,TABS,THEME,PAGE,slotAt,setTheme,PALETTES,surpriseAt,SURPRISES};
+module.exports={warmup,SPLASH,draw,W,H,TABS,THEME,PAGE,slotAt,setTheme,PALETTES,surpriseAt,SURPRISES};

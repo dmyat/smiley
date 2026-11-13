@@ -37,6 +37,13 @@ setTimeout(async()=>{
   await tap('editDone');assert(!targets().some((t)=>/^slot/.test(t.key)),'Done closes the editor');
   await tap('editStart');assert(targets().some((t)=>t.key==='slot0'),'the Edit gauges button opens it too');
   await tap('editReset');assert.equal(slots()[0],'rpm');await tap('editDone');
+  // big number mode: a tap on a gauge shows it alone, a tap anywhere (or All gauges) brings the six back
+  assert(targets().some((t)=>t.key==='big-rpm')&&targets().some((t)=>t.key==='big-boost'),'each gauge can be opened big');
+  await tap('big-boost');assert(targets().some((t)=>t.key==='bigClose')&&!targets().some((t)=>/^big-/.test(t.key)),'one gauge fills the page');
+  await tap('bigClose');assert(targets().some((t)=>t.key==='big-boost')&&!targets().some((t)=>t.key==='bigClose'));
+  await tap('big-oil');await tap('bigBack');assert(targets().some((t)=>t.key==='big-oil'));
+  await tap('big-rpm');await tap('editStart').then(()=>assert.fail('no Edit button while a gauge is big'),()=>{});await tap('bigClose');
+  await tap('editStart');assert(!targets().some((t)=>/^big-/.test(t.key)),'no big mode while editing');await tap('editDone');
   console.log('PASS hold-to-edit: quick taps and drags ignored, hold opens the pick list, choose from it, default layout and done');process.exit(0);
  }catch(e){console.error(e.stack);process.exit(1);}
 },700);

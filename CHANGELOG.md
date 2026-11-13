@@ -2,6 +2,16 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.2.1
+
+- **Big number mode.** Tap any gauge on Live Stats to show it alone across the
+  whole page: a very large number, the lowest and highest so far, and a bar
+  showing where it sits on its scale. Tap anywhere to go back. Holding a gauge
+  still opens the list to change it.
+- **Start-up animation.** About a second and a half when the app opens: the
+  name is written out, a line draws under it, PERFORMANCE fades in, then it
+  fades away to the page. It can be switched off in Settings.
+
 ## 0.2.0
 
 - Version number moves to 0.2.0. Same build as 0.1.27.
