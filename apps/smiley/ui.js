@@ -6,6 +6,8 @@ const W = 1600, H = 520;
 const { DEFAULT: GAUGE_IDS, PER_PAGE } = require('./layout');
 // Live Stats: three gauges across, two down. The names are what the pick list shows.
 const COLS = 3, TILE_W = 508, TILE_H = 186, PITCH_X = 522, PITCH_Y = 196;
+// where the red zone of a dial starts (f: Fahrenheit shown); gauges not listed have none
+const ZONES = { rpm: () => 6500, oil: (f) => (f ? 266 : 130), coolant: (f) => (f ? 239 : 115) };
 const GAUGE_NAMES = { rpm: 'RPM', boost: 'Boost', oil: 'Oil temp', coolant: 'Coolant', iat: 'Intake temp', stft1: 'Fuel trim 1', stft2: 'Fuel trim 2',
     hpfp: 'High fuel press', timing: 'Timing', lambda: 'Lambda', lpfp: 'Low fuel press', oilp: 'Oil pressure', boostTarget: 'Boost target',
     load: 'Engine load', torque: 'Torque', misfire: 'Misfires' };
@@ -382,7 +384,13 @@ function stats(cv,v,a) {
         }
         if(!q){misfires(cv,d,x,y,TILE_W);return;}
         if(v.gaugeStyle!=='dial'){barGauge(cv,x,y,q);if(q[1]==null)text(cv,q[6]==='stft2'?'IF FITTED':'NO DATA',x+TILE_W-16,y+24,12,THEME.dim,{align:'right'});return;}
-        G.radial(cv,THEME,x+TILE_W/2,y+76,64,{value:q[1],unit:q[2],min:q[3],max:q[4],decimals:q[5],ticks:10,tickColor:'#ffffff',tickLong:10,tickShort:6});
+        // the dial: a thick band with a red zone where the reading has one, the highest value marked on
+        // the band, and the lowest and highest so far written either side
+        const p=pk[q[6]], lo=p&&isFinite(p.min)?q[7](p.min):null, hi=p&&isFinite(p.max)?q[7](p.max):null;
+        G.radial(cv,THEME,x+TILE_W/2,y+80,70,{value:q[1],unit:q[2],min:q[3],max:q[4],decimals:q[5],thick:15,ticks:10,tickColor:'#ffffff',tickLong:9,tickShort:5,
+            zones:ZONES[q[6]]?[{from:ZONES[q[6]](f),to:q[4],color:'crit'}]:[],peak:hi,showPeak:false});
+        if(lo!=null){text(cv,'MIN',x+34,y+66,12,THEME.dim,{font:'bold',spacing:1.5});text(cv,G.fmt(lo,q[5]),x+34,y+94,24,THEME.text,{font:'num'});}
+        if(hi!=null){text(cv,'MAX',x+TILE_W-34,y+66,12,THEME.dim,{font:'bold',spacing:1.5,align:'right'});text(cv,G.fmt(hi,q[5]),x+TILE_W-34,y+94,24,THEME.accent,{font:'num',align:'right'});}
         if(q[1]==null)text(cv,q[6]==='stft2'?'IF FITTED':'NO DATA',x+TILE_W-16,y+24,12,THEME.dim,{align:'right'});
     });
     if(listCol>=0)pickList(cv,v,a,24+listCol*PITCH_X,58);
@@ -394,8 +402,9 @@ function stats(cv,v,a) {
         return;
     }
     text(cv,d.boostMissingBaro?'Boost uses standard air pressure until the car reports its own':v.demo?'Demo data  ·  Nothing is sent to the car':'Hold a gauge to move or change it',44,490,18,THEME.dim);
-    button(cv,994,456,285,'Edit gauges',a.editStart,'editStart',false,false);
-    button(cv,1291,456,285,v.statsPage?'Main gauges':'More gauges',a.statsPage,'statsPage',false,false);
+    button(cv,986,456,190,'Reset min/max',a.resetPeaks,'resetPeaks',false,false);
+    button(cv,1186,456,190,'Edit gauges',a.editStart,'editStart',false,false);
+    button(cv,1386,456,190,v.statsPage?'Main gauges':'More gauges',a.statsPage,'statsPage',false,false);
 }
 /** Which gauge card (0-5) is at a point of the Live Stats page, or -1. */
 function slotAt(x,y) {
@@ -422,27 +431,23 @@ function pickList(cv,v,a,x,y) {
     });
 }
 /**
- * A gauge as a straight bar (Settings > Live Stats gauges > Bars): the number large above, the bar
- * under it filled from the start of its scale - or from zero when the scale runs both ways (trims,
- * timing, boost) - in the colour of where it stands, with the two ends of the scale below.
+ * A gauge as a signal meter (Settings > Live Stats gauges > Signal bars): the number large above
+ * and, under it, fourteen bars that rise like a phone's signal and light up from the left as the
+ * reading climbs its scale - green first, then yellow, orange and red at the top.
  * q = [label, value, unit, min, max, decimals] as for the dial.
  */
+const SIGNAL=['#35c46a','#b7d443','#f2c043','#f2823a','#ec3440'], SEGMENTS=14;
 function barGauge(cv,x,y,q) {
     const val=q[1], min=q[3], max=q[4], has=typeof val==='number'&&isFinite(val), cx=x+TILE_W/2;
-    const s=has?G.fmt(val,q[5]):'--', tw=cv.textWidth(s,62,{font:'num'}), uw=q[2]?cv.textWidth(q[2],22,{font:'label'})+10:0;
-    text(cv,s,cx-uw/2,y+78,62,has?THEME.text:THEME.dim,{font:'num',align:'center'});
-    if(q[2])text(cv,q[2],cx-uw/2+tw/2+10,y+78,22,THEME.dim);
-    const bx=x+40, bw=TILE_W-80, by=y+100, bh=18, X=(n)=>bx+G.clamp((n-min)/(max-min),0,1)*bw;
-    cv.roundRect(bx,by,bw,bh,9,THEME.track);
-    if(has){
-        const f=G.clamp((val-min)/(max-min),0,1), zero=min<0&&max>0?X(0):bx, xe=X(val), a=Math.min(zero,xe), b=Math.max(zero,xe);
-        const col=G.ramp(THEME.hotRamp||THEME.ramp,f);
-        if(b-a>=2)cv.roundRect(a,by,Math.max(b-a,bh),bh,9,col);
-        cv.roundRect(xe-3,by-4,6,bh+8,3,THEME.text);                       // the marker at the value
-        if(zero!==bx)cv.fillRect(zero-1,by-3,2,bh+6,THEME.tick);            // the zero line of a two-way scale
+    const s=has?G.fmt(val,q[5]):'--', tw=cv.textWidth(s,54,{font:'num'}), uw=q[2]?cv.textWidth(q[2],20,{font:'label'})+10:0;
+    text(cv,s,cx-uw/2,y+64,54,has?THEME.text:THEME.dim,{font:'num',align:'center'});
+    if(q[2])text(cv,q[2],cx-uw/2+tw/2+10,y+64,20,THEME.dim);
+    const f=has?G.clamp((val-min)/(max-min),0,1):0, lit=has?Math.max(f>0.005?1:0,Math.round(f*SEGMENTS)):0;
+    const sw=22, gap=6, x0=cx-(SEGMENTS*(sw+gap)-gap)/2, base=y+142;
+    for(let i=0;i<SEGMENTS;i++){
+        const h=12+i*(34/(SEGMENTS-1)), on=i<lit;
+        cv.roundRect(x0+i*(sw+gap),base-h,sw,h,4,on?G.ramp(SIGNAL,i/(SEGMENTS-1)):THEME.track);
     }
-    const end=(n)=>G.fmt(n,Number.isInteger(n)?0:1);
-    text(cv,end(min),bx,y+140,13,THEME.dim); text(cv,end(max),bx+bw,y+140,13,THEME.dim,{align:'right'});
 }
 function misfires(cv,d,x,y,w) {
     const m=d.misfires;
@@ -572,7 +577,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.10 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.12 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);

@@ -161,8 +161,8 @@ function radial(cv, t, cx, cy, r, g) {
     const min = g.min || 0, max = g.max == null ? 100 : g.max;
     const v = g.value, sv = sm(g, 'radial|' + cx + '|' + cy, v);
     const f = isNum(sv) ? clamp((sv - min) / (max - min), 0, 1) : 0;
-    const thick = Math.max(8, r * 0.11);
-    const S = Math.ceil(r + 16), key = ['radial', r, min, max, g.ticks, g.majorEvery, g.tickLabels, g.tickDiv, g.tickDecimals, g.tickColor, g.tickLong, g.tickShort,
+    const thick = g.thick || Math.max(8, r * 0.11);            // g.thick: an app's own band width (SMILEY)
+    const S = Math.ceil(r + 16), key = ['radial', r, thick, min, max, g.ticks, g.majorEvery, g.tickLabels, g.tickDiv, g.tickDecimals, g.tickColor, g.tickLong, g.tickShort,
         JSON.stringify(g.zones || []), g.unit || '', g.label || '', t.name].join('|');
     cv.blit(layer(key, 2 * S, 2 * S, (c) => radialStatic(c, t, S, S, r, g, min, max, thick), cv.textScale), Math.round(cx) - S, Math.round(cy) - S);
     radialLive(cv, t, cx, cy, r, g, min, max, thick, v, sv, f);
