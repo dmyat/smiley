@@ -625,7 +625,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.26 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.27 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
@@ -684,9 +684,9 @@ function historyPage(cv,p,v,a) {
         const y=170+i*57, d=new Date(e.at), k=kinds[e.kind]||[String(e.kind).toUpperCase(),THEME.dim], w=historyWords(e,v), gap=day(today)-day(d);
         if(i)cv.fillRect(74,y,1452,1,THEME.panelEdge);
         cv.roundRect(74,y+11,6,38,3,k[1]);
-        text(cv,k[0],96,y+28,20,k[1],{font:'bold',spacing:1});
+        text(cv,k[0],96,y+28,18,withAlpha(k[1],0.9),{font:'bold',spacing:1});
         text(cv,(gap===0?'Today':gap===1?'Yesterday':MONTHS[d.getMonth()]+' '+d.getDate())+(gap>1?'   ·   '+ago(h.now-e.at):gap===0?'   ·   '+ago(h.now-e.at):''),96,y+49,16,THEME.dim);
-        text(cv,w[0],380,y+30,27,THEME.text,{font:'bold'});
+        text(cv,w[0],380,y+29,24,withAlpha(THEME.text,0.86));          // regular weight, a touch softer than white
         text(cv,w[1].slice(0,140),380,y+50,17,THEME.dim);
     });
     text(cv,'Saved for '+h.days+' days, then deleted for you.'+(h.pages>1?'   Page '+(h.page+1)+' of '+h.pages:''),74,440,16,THEME.dim);
