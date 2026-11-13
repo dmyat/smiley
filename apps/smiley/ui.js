@@ -168,12 +168,15 @@ function draw(cv, v, act) {
     else watermark(cv,v);
     if(THEME.snow){
         const now=Date.now(); drawSnow(cv,now);
-        // surprises stay off the pages whose bottom line carries a safety note, and out of the way of a message or the editor
-        if(v.surprises!=='off'&&!v.notice&&!v.edit&&v.page!==PAGE.xdrive&&v.page!==PAGE.faults) drawSurprise(cv,surpriseAt(now));
+        // surprises play only in the empty strip at the bottom middle of the pages that have one, so they
+        // never cover a gauge, a button or a line of text; not while a message or the gauge editor is up
+        if(v.surprises!=='off'&&!v.notice&&!v.edit&&(v.page===PAGE.stats||v.page===PAGE.perf||v.page===PAGE.info)) drawSurprise(cv,surpriseAt(now));
     }
 }
-// Christmas surprises: now and then something festive crosses the screen for a few seconds - Santa's
-// sleigh behind two reindeer, a shooting star, or a snowman who pops up and waves. Like the snow it is
+// Christmas surprises: now and then something festive plays for a few seconds in the empty strip at
+// the bottom middle of the page (LANE) - Santa's sleigh behind two reindeer rises into it, flies along
+// and dips away, a shooting star crosses it, or a snowman peeks up over the bottom edge and waves.
+// Nothing is ever drawn over a gauge, a button or text. Like the snow it is
 // worked out from the clock alone: time is cut into 75 s slots, about three in five hold a surprise,
 // and the slot's number picks which one, when and where. It can be switched off in Settings.
 const SURPRISES={sleigh:7000,star:1800,snowman:5200};
@@ -187,11 +190,19 @@ function surpriseAt(now){
     if(t<0||t>dur)return null;
     return {kind,t,dur,p:t/dur,a:r(4),b:r(5)};
 }
+// the free strip: between the hint text on the left and the buttons on the right, under the cards
+const LANE={x0:600,x1:970,top:448,ground:505};
+// the drawing calls of cv, moved to (ox, oy) and scaled by k, so a figure drawn around 0,0 fits the strip
+const placed=(cv,ox,oy,k)=>({
+    circle:(x,y,r,c)=>cv.circle(ox+x*k,oy+y*k,r*k,c), roundRect:(x,y,w,h,r,c)=>cv.roundRect(ox+x*k,oy+y*k,w*k,h*k,r*k,c),
+    fillRect:(x,y,w,h,c)=>cv.fillRect(ox+x*k,oy+y*k,w*k,h*k,c), line:(a,b,c2,d,w,c)=>cv.line(ox+a*k,oy+b*k,ox+c2*k,oy+d*k,Math.max(1,w*k),c),
+    arc:(x,y,r0,r1,a0,a1,c)=>cv.arc(ox+x*k,oy+y*k,r0*k,r1*k,a0,a1,c) });
 function drawSurprise(cv,s){
     if(!s)return;
-    if(s.kind==='sleigh')drawSleigh(cv,-330+s.p*(W+400),120+s.a*200+Math.sin(s.p*Math.PI*2)*22,s.t);
+    const hide=1-Math.sin(s.p*Math.PI);                 // 1 at the start and end (below the screen), 0 in the middle
+    if(s.kind==='sleigh'){const k=0.72;drawSleigh(placed(cv,LANE.x0+s.p*(LANE.x1-LANE.x0-242*k),LANE.ground+Math.pow(hide,3)*75,k),0,0,s.t);}
     else if(s.kind==='star')drawShootingStar(cv,s);
-    else drawSnowman(cv,180+s.a*(W-360),s);
+    else drawSnowman(placed(cv,LANE.x0+50+s.a*(LANE.x1-LANE.x0-100),LANE.top+54+(1-Math.min(1,s.t/500,(s.dur-s.t)/500))*72,0.6),0,0,s);
 }
 const XMAS={red:'#c5282f',white:'#ffffff',skin:'#f3d2b8',brown:'#7a4a25',dark:'#4a2c14',gold:'#e6c877',coal:'#16181a',green:'#2f8f5a'};
 // one reindeer, facing right, with its feet at ground line y; step: the gallop (ms)
@@ -226,13 +237,14 @@ function drawSleigh(cv,x,y,step){
     cv.line(x-8,sy+5,x+86,sy+5,3.5,c.gold); cv.arc(x+86,sy-4,7.5,10.5,-90,90,c.gold);             // runner with its curl
 }
 function drawShootingStar(cv,s){
-    const c=XMAS, x=60+s.a*(W*0.45)+s.p*620, y=70+s.b*90+s.p*190, fade=Math.sin(s.p*Math.PI);
-    for(let k=1;k<=9;k++)cv.circle(x-k*17,y-k*5.2,Math.max(0.5,(4.6-k*0.45)*fade),k%2?c.gold:c.white);
+    const c=XMAS, x=LANE.x0+70+s.p*(LANE.x1-LANE.x0-90), y=LANE.top+12+s.p*34, fade=Math.sin(s.p*Math.PI);
+    for(let k=1;k<=5;k++)cv.circle(x-k*12,y-k*1.3,Math.max(0.5,(4.4-k*0.7)*fade),k%2?c.gold:c.white);
     for(let k=0;k<4;k++){const a=k*Math.PI/4, r=11*fade;cv.line(x-Math.cos(a)*r,y-Math.sin(a)*r,x+Math.cos(a)*r,y+Math.sin(a)*r,2.5,c.gold);}
     cv.circle(x,y,5*fade,c.white);
 }
-function drawSnowman(cv,x,s){
-    const c=XMAS, up=Math.min(1,s.t/500,(s.dur-s.t)/500), y=H+78-up*150, wave=Math.sin(s.t/170)*10;
+// the snowman around x, y (the middle of his chest); in the strip only his top half shows over the edge
+function drawSnowman(cv,x,y,s){
+    const c=XMAS, wave=Math.sin(s.t/170)*10;
     cv.circle(x,y+34,34,c.white); cv.circle(x,y-10,24,c.white);            // body
     cv.line(x-22,y-4,x-52,y-18,3.5,c.dark); cv.line(x+22,y-6,x+50,y-30+wave,3.5,c.dark);          // arms, the right one waving
     cv.line(x+50,y-30+wave,x+58,y-40+wave,2.5,c.dark); cv.line(x+50,y-30+wave,x+60,y-30+wave,2.5,c.dark);
@@ -531,7 +543,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.7 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.8 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);

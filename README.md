@@ -6,7 +6,7 @@
 
 **Your BMW's engine, tune, faults and performance timers, on the car's own screen.**
 
-An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.7 &nbsp;·&nbsp; by David Myat
+An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.8 &nbsp;·&nbsp; by David Myat
 
 [Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#nine-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
 
@@ -20,7 +20,7 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.7 &nbsp;·&nb
 
 ## The tour
 
-Six tabs across the top of the screen in version 0.1.7: Live Stats, AWD / 2WD,
+Six tabs across the top of the screen in version 0.1.8: Live Stats, AWD / 2WD,
 Perf, Tune, Faults and Info. **Phone, Connect and Flash are switched off for
 now**; their sections below describe what they do when they return. The
 screenshots come from the simulation, with demo data.
@@ -149,9 +149,10 @@ the app version. Read once when SMILEY starts.
 
 Pick one under Settings → Theme. Eight are ready-made; the ninth is yours.
 **Christmas** is the theme a new install starts with for now. It adds gently
-falling snow and, now and then, a surprise: Santa's sleigh crossing the
-screen, a shooting star, or a snowman who pops up and waves. The surprises
-can be switched off under Settings → Christmas surprises.
+falling snow and, now and then, a small surprise in the empty strip at the
+bottom of Live Stats, Perf and Info: Santa's sleigh, a shooting star, or a
+snowman who peeks up and waves. They never cover a gauge, a button or text,
+and can be switched off under Settings → Christmas surprises.
 
 <img src="docs/screenshots/themes.png" alt="The eight themes side by side on the Live Stats page">
 
