@@ -2,6 +2,11 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.2.2
+
+- The start-up animation plays once, when the app starts, and not again when
+  you come back to the app later.
+
 ## 0.2.1
 
 - **Big number mode.** Tap any gauge on Live Stats to show it alone across the

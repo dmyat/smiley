@@ -81,7 +81,7 @@ mgu.run({async start(ctx){
             try{parts=await readParts(link);}catch(e){log.warn('parts list: '+String(e&&e.message||e));}});
         refreshPending=false;
     }
-    let big=null,splashAt=Date.now(),hiddenAt=0;          // the gauge shown full screen; when the start-up animation began
+    let big=null;const splashAt=Date.now();          // the gauge shown full screen; the start-up animation plays once, when the app starts
     function setPage(i){
         if(flash.programming){page=P.flash;repaint();return;}
         betaEntry=i===P.connect||i===P.flash?i:null;
@@ -252,7 +252,7 @@ mgu.run({async start(ctx){
         if(['hold','closeLimit','arm'].includes(key))auto.settingsChanged(key).catch((e)=>log.warn(String(e)));
         repaint();
     });
-    if(ui.onVisible)ui.onVisible((name,on)=>{if(name!=='MAIN')return;if(!on)hiddenAt=Date.now();else if(!visible&&hiddenAt&&Date.now()-hiddenAt>300000)splashAt=Date.now();visible=on;});          // the animation plays again after five minutes away
+    if(ui.onVisible)ui.onVisible((name,on)=>{if(name==='MAIN')visible=on;});
     link.onAvailable((on)=>{refreshPending=!!on&&!session.demo;identTries=0;identAt=Date.now();telemetry.times={};tune._reset();controller.state.accepted=null;controller.state.confirmed='UNKNOWN';});
     // No map/exhaust/fault-clear action at startup. Tuners and exhaust ship disabled.
     if(!session.demo&&!session.paused)await action(refresh)();
