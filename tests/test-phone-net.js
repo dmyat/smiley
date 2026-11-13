@@ -11,8 +11,11 @@ else if(a[0]==='insert'){s.rules.unshift({h:s.next++,text:a.slice(5).join(' ')})
 else if(a[0]==='delete'){s.rules=s.rules.filter(r=>String(r.h)!==a[6]);fs.writeFileSync(f,JSON.stringify(s));}
 else process.exit(2);
 `, { mode: 0o755 });
-const mine = () => JSON.parse(fs.readFileSync(rules, 'utf8')).rules.filter((r) => /smiley-phone-net/.test(r.text));
-const others = () => JSON.parse(fs.readFileSync(rules, 'utf8')).rules.filter((r) => !/smiley-phone-net/.test(r.text)).length;
+// the pretend firewall rewrites its file in place: a read that lands mid-write sees half of it, so keep the last whole one
+let seen = { rules: [] };
+const state = () => { try { seen = JSON.parse(fs.readFileSync(rules, 'utf8')); } catch (e) { /* half-written: use the last whole read */ } return seen; };
+const mine = () => state().rules.filter((r) => /smiley-phone-net/.test(r.text));
+const others = () => state().rules.filter((r) => !/smiley-phone-net/.test(r.text)).length;
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 const until = async (fn, what) => { for (let i = 0; i < 80; i++) { if (fn()) return; await wait(50); } throw new Error('timed out: ' + what); };
 (async () => {
