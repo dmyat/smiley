@@ -6,11 +6,11 @@
 
 **Your BMW's engine, tune, faults and performance timers, on the car's own screen.**
 
-An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.2.4 &nbsp;·&nbsp; by David Myat
+An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.2.5 &nbsp;·&nbsp; by David Myat
 
 [Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#ten-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
 
-<img src="docs/screenshots/live-stats.png" alt="Live Stats: eight round engine gauges on a black and gold screen">
+<img src="docs/screenshots/live-stats.png" alt="Live Stats: six engine gauges, signal bars for the fast readings and dials for the rest">
 
 </div>
 
@@ -22,7 +22,7 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.2.4 &nbsp;·&nb
 
 What changed in each version: [release notes](CHANGELOG.md).
 
-Six tabs across the top of the screen in version 0.2.4: Live Stats, AWD / 2WD,
+Six tabs across the top of the screen in version 0.2.5: Live Stats, AWD / 2WD,
 Perf, Tune, Faults and Info. **Phone, Connect and Flash are switched off for
 now**; their sections below describe what they do when they return. The
 screenshots come from the simulation, with demo data.
@@ -46,6 +46,42 @@ misfires. Twelve are on the pages; the other four wait in the pick list.
 Press and hold a gauge, or tap Edit gauges and then a gauge, and choose from
 the list what that place shows.
 
+**Big number mode.** Tap any gauge and it fills the page: one very large
+number, its lowest and highest so far, and a bar showing where it sits on its
+scale. Tap anywhere to go back.
+
+**Warm-up light.** Top right on every tab, from the engine oil temperature:
+blue while the engine is cold, amber while it warms up, green once it is
+ready.
+
+**Smoother gauges.** The fast gauges on screen are asked for together in one
+request, so each one is refreshed more often. If the car does not answer that
+way, the app goes back to asking one at a time by itself.
+
+</td>
+</tr>
+<tr>
+<td colspan="2">
+
+### Live Stats layouts
+
+Settings → Live Stats layout offers four more ways to see the same readings.
+The six gauges are the default and their page is unchanged. In the other
+layouts a Layout button steps on to the next one and back to the six gauges,
+and a tap on any reading opens it in big number mode.
+
+- **Cockpit**: one large RPM ring with boost inside it and four readings
+  around it.
+- **Race dash**: rev bars that rise like a signal meter, and five big numbers.
+- **Graph view**: the last 30 seconds of each reading as a line.
+- **Car view**: the readings around a top view of a car, with each tyre's
+  pressure and temperature. The tyre numbers are samples in the demo; on the
+  car they show "--" until the app knows which signal carries them.
+
+<img src="docs/screenshots/layouts.png" alt="The four extra layouts: Cockpit, Race dash, Graph view and Car view">
+
+<img src="docs/screenshots/big-number.png" width="60%" alt="Big number mode showing boost across the whole page">
+
 </td>
 </tr>
 <tr>
@@ -62,7 +98,7 @@ Experimental, and off until you turn it on in Settings.
 <td width="55%"><img src="docs/screenshots/awd-2wd.png" alt="AWD / 2WD tab"></td>
 </tr>
 <tr>
-<td width="55%"><img src="docs/screenshots/perf.png" alt="Perf tab with the drag timer"></td>
+<td width="55%"><img src="docs/screenshots/perf.png" alt="Perf tab with the drag timer and the History button"></td>
 <td>
 
 ### Perf
@@ -146,8 +182,12 @@ programming adapter is included. A separate warning appears every time you enter
 
 ### Info
 
-The car's VIN, the engine computer's type and numbers, the tune found, and
-the app version. Read once when SMILEY starts.
+The car's VIN, the engine computer's type, hardware and software numbers,
+the tune found, the app version and the maker's Instagram. Read when the app
+starts.
+
+When the app opens, a short start-up animation plays once (Settings can
+switch it off).
 
 </td>
 </tr>
@@ -276,7 +316,7 @@ thing that looks wrong.**
 
 ```sh
 python3 kit/tools/build.py --preview-only smiley   # stage the app without the BMW SDK
-node tests/test-smiley.js                          # 50 integration checks
+node tests/test-smiley.js                          # 51 integration checks
 node tests/test-native-flow.js                     # the app on the head-unit stub
 node tests/test-edit-gauges.js                     # press-and-hold gauge editing
 node tests/test-phone-net.js                       # the phone access helper, against a pretend firewall

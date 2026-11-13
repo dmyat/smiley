@@ -132,6 +132,19 @@ async function run(){
   for(const k of ['boost','oilp','hpfp'])assert(n[k]>=50,k+' was read '+(n[k]||0)+' times');
   assert(n.iat>=5,'the slower readings still get their turns');assert(t.snapshot(false).boost!==null);
  });
+ await test('Gauges on screen are read together in one request once each has answered alone; a car that refuses goes back to one at a time',async()=>{
+  const {DidReader}=require(path.join(APP,'kit/dids'));
+  const cfg={boost:[{did:'4205',bytes:2,factor:0.01}],hpfp:[{did:'4206',bytes:2}],lpfp:[{did:'4207',bytes:1,offset:-40}],baro:[{did:'4208',bytes:1}]};
+  const car=(multi)=>{const d={sent:[],val:{0x4205:[0x27,0x10],0x4206:[0x00,0xC8],0x4207:[0x49],0x4208:[0x65]},physical:async(ecu,sid,data)=>{d.sent.push(data.length/2);if(data.length>2&&!multi)return [0x7F,0x22,0x31];let r=[0x62];for(let i=0;i<data.length;i+=2){const id=(data[i]<<8)|data[i+1];r=r.concat([data[i],data[i+1]],d.val[id]);}return r;}};return d;};
+  const run=async(multi)=>{let now=1e6;const d=car(multi),t=new Telemetry(ctx(),{poll:(fn)=>fn()},()=>now);t.cfg=cfg;t.link={available:true,diag:d};t.reader=new DidReader(d,{ecu:0x12});t.setFocus(['boost','hpfp','lpfp']);for(let i=0;i<60;i++){await t.poll();now+=40;}return {t,d};};
+  const a=await run(true);
+  assert(a.t.batched>=30,'most requests carry all three gauges: '+a.t.batched);assert(a.d.sent.some((n)=>n===3));assert(!a.t.batchOff);
+  assert.equal(a.t.values.hpfp,200);assert.equal(a.t.values.lpfp,33);assert(Math.abs(a.t.values.boost-100)<1e-9,'the values from a batch are scaled like single reads');
+  a.d.val[0x4206]=[0x01,0x90];let now2=2e6;a.t.clock=()=>now2;await a.t.poll();assert.equal(a.t.values.hpfp,400,'a new value arrives through the batch');
+  const b=await run(false);
+  assert(b.t.batchOff,'three refusals end batching');assert.equal(b.t.batched,0);assert.equal(b.d.sent.filter((n)=>n>1).length,3);
+  assert.equal(b.t.values.hpfp,200);assert.equal(b.t.values.lpfp,33);assert(b.d.sent.filter((n)=>n===1).length>30,'and the gauges carry on one at a time');
+ });
  await test('Misfire counts are summed per driving cycle; an engine without them is left alone',async()=>{
   const t=new Telemetry(ctx(),new Session(),()=>1000);let asked=0;
   t.reader={monitor:async(ecu,mid,did)=>{asked++;assert.equal(ecu,0x12);return did?null:[{tid:0x0C,value:mid===0xA4?3:0},{tid:0x0B,value:99}];}};

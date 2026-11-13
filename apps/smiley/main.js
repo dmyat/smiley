@@ -267,7 +267,7 @@ mgu.run({async start(ctx){
         repaint();
     });
     if(ui.onVisible)ui.onVisible((name,on)=>{if(name==='MAIN')visible=on;});
-    link.onAvailable((on)=>{refreshPending=!!on&&!session.demo;identTries=0;identAt=Date.now();telemetry.times={};tune._reset();controller.state.accepted=null;controller.state.confirmed='UNKNOWN';});
+    link.onAvailable((on)=>{refreshPending=!!on&&!session.demo;identTries=0;identAt=Date.now();telemetry.times={};telemetry.batchFails=0;telemetry.batchOff=false;tune._reset();controller.state.accepted=null;controller.state.confirmed='UNKNOWN';});
     // No map/exhaust/fault-clear action at startup. Tuners and exhaust ship disabled.
     if(!session.demo&&!session.paused)await action(refresh)();
     setInterval(()=>{

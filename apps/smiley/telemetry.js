@@ -1,6 +1,7 @@
 'use strict';
 // Scaling and DID candidates derived from upstream car.js, M Vitals and Live Data.
 const { DidReader } = require('./kit/dids');
+const { split } = require('./kit/sgbd');
 const Car = require('./kit/car');
 const Sim = require('./kit/sim');
 const fs = require('fs');
@@ -23,11 +24,25 @@ const SLOW_MS = 1000;
 const STANDARD_BARO = 101.3;      // kPa, used for boost until the car reports its outside air pressure
 const RETRY_MS = 2000;           // a reading that has worked before is asked again this soon after it fails
 const GAP_MS = 25;
+const BATCH_MAX = 8;                 // identifiers in one request, as the kit's own link allows
+const BATCH_GIVE_UP = 3;             // batches that do not add up before the session goes back to one at a time
+/** A value out of a one-identifier reply (62 hi lo data...), scaled as kit/dids.js read() does; null when it does not fit. */
+function decodeDid(c, uds) {
+    const at = 3 + (c.at || 0), n = c.bytes || 1;
+    if (uds.length < at + n) return null;
+    let raw = 0;
+    for (let i = 0; i < n; i++) raw = raw * 256 + uds[at + i];
+    if (c.signed && raw >= Math.pow(2, 8 * n - 1)) raw -= Math.pow(2, 8 * n);
+    if (c.bit != null) raw = (raw >> c.bit) & 1;
+    const v = raw * (c.factor == null ? 1 : c.factor) + (c.offset || 0);
+    return (c.min != null && v < c.min) || (c.max != null && v > c.max) ? null : v;
+}
 class Telemetry {
     constructor(ctx, session, clock) {
         this.ctx = ctx; this.session = session; this.clock = clock || Date.now;
         this.values = {}; this.times = {}; this.fail = {}; this.next = {}; this.answered = {};
         this.reader = null; this.link = null; this.index = 0; this.quickTurn = 0;
+        this.batch = {}; this.batchFails = 0; this.batchOff = false; this.batched = 0;          // see pollBatch()
         this.focus = null;           // the gauges on screen (ids), read fastest: setFocus()
         // selector position per source: 'P' | 'R' | 'N' | 'D', or null when that source cannot tell
         this.stages = {};
@@ -143,9 +158,14 @@ class Telemetry {
         // third turn to the others left one fast gauge without a turn whenever three were on screen
         // (on the default first page that was the boost).
         const slowTurn = slow && (this.index % 3 === 0 || !quick.length);
-        const k = slowTurn ? slow : quick.length ? quick[this.quickTurn++ % quick.length] : null;
-        if (!k) return;
         const done = () => { this.lastAsk = this.clock(); };
+        // the gauges on screen that have each answered on their own go out together in one request
+        const together = slowTurn || this.batchOff ? [] : this.batchable(quick);
+        // (a gauge that has not answered alone yet, or cannot go in a batch, still gets every other turn)
+        const alone = together.length >= 2 ? quick.filter((q) => together.indexOf(q) < 0) : quick;
+        if (together.length >= 2 && !(alone.length && this.index % 2 === 0)) return this.session.poll(() => this.pollBatch(together).then(done, done));
+        const k = slowTurn ? slow : alone.length ? alone[this.quickTurn++ % alone.length] : null;
+        if (!k) return;
         if (k === 'misfire') return this.session.poll(() => this.readMisfire().then(done, done));
         return this.session.poll(async () => {
             let candidates = (this.cfg[k] || []).map((c) => Object.assign({}, c, { timeoutMs: 900 }));
@@ -155,7 +175,7 @@ class Telemetry {
             if (at >= 0 && candidates[at]) candidates = [candidates[at]];
             const v = await this.reader.value(k, candidates);
             if (at >= 0 && picks) picks[k] = at;       // value() counted within the short list: keep the place in the full one
-            if (v !== null) { this.put(k, v); this.fail[k] = 0; this.answered[k] = true; this.next[k] = k === 'baro' ? this.clock() + 60000 : fast.indexOf(k) >= 0 ? 0 : this.clock() + SLOW_MS; }
+            if (v !== null) { this.learnBatch(k); this.put(k, v); this.fail[k] = 0; this.answered[k] = true; this.next[k] = k === 'baro' ? this.clock() + 60000 : fast.indexOf(k) >= 0 ? 0 : this.clock() + SLOW_MS; }
             else {
                 this.fail[k] = (this.fail[k] || 0) + 1;
                 // Only a reading this car has never answered is left alone for 30 s. One that has answered
@@ -163,6 +183,46 @@ class Telemetry {
                 if (this.fail[k] >= 2) this.next[k] = this.clock() + (this.answered[k] || k === 'baro' ? RETRY_MS : 30000);
             }
             done();
+        });
+    }
+    /*
+     * Smoother gauges: several identifiers in one request. Asked one at a time, six gauges on screen
+     * take six round trips for one update of each; asked together they take one, so each gauge is
+     * refreshed several times as often. A gauge joins only after it has answered on its own (that
+     * shows which identifier works on this car and how long its data is), and the engine computer's
+     * reply is taken apart by those lengths. A reply that does not add up counts against batching;
+     * after three in a row the session goes back to one at a time, exactly as before.
+     */
+    learnBatch(k) {
+        const list = this.cfg && this.cfg[k], picks = this.reader && this.reader.pick, c = list && picks && list[picks[k] || 0];
+        if (!c || c.obd || !c.did || (c.ecu != null && c.ecu !== 0x12) || !this.reader.raws || !this.reader.key) return;
+        const raw = this.reader.raws[this.reader.key(c)];
+        if (!raw || !raw.ok || !raw.bytes) return;
+        const len = raw.bytes.split(' ').length - 3;
+        if (len > 0) this.batch[k] = { c, did: parseInt(c.did, 16), len };
+    }
+    batchable(keys) {
+        const diag = this.link && this.link.diag, seen = {}, out = [];
+        if (!diag || typeof diag.physical !== 'function') return out;
+        keys.forEach((k) => { const b = this.batch[k]; if (b && !seen[b.did] && out.length < BATCH_MAX) { seen[b.did] = 1; out.push(k); } });
+        return out;
+    }
+    async pollBatch(keys) {
+        const dids = keys.map((k) => this.batch[k].did), data = [], lens = {};
+        keys.forEach((k) => { const b = this.batch[k]; data.push(b.did >> 8, b.did & 0xFF); lens[b.did] = b.len; });
+        let reply = null;
+        try { reply = await this.link.diag.physical(0x12, 0x22, data, 900, (u) => (u[0] === 0x62 && dids.indexOf((u[1] << 8) | u[2]) >= 0) || (u[0] === 0x7F && u[1] === 0x22)); } catch (e) { reply = null; }
+        const parts = reply && reply[0] === 0x62 ? split(reply, lens) : null;
+        if (!parts) {
+            if (++this.batchFails >= BATCH_GIVE_UP) { this.batchOff = true; this.ctx.log.info('gauges: reading several at once is not answered on this car - back to one at a time'); }
+            return;
+        }
+        this.batchFails = 0; this.batched++;
+        keys.forEach((k) => {
+            const b = this.batch[k], u = parts[b.did];
+            if (!u) { delete this.batch[k]; return; }                 // left out of the reply: on its own from now on
+            const v = decodeDid(b.c, u);
+            if (v !== null) { this.put(k, v); this.fail[k] = 0; this.next[k] = 0; }
         });
     }
     /**

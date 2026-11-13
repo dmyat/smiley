@@ -238,7 +238,7 @@ function surpriseAt(now){
     return {kind,t,dur,p:t/dur,a:r(4),b:r(5)};
 }
 // the free strip: between the hint text on the left and the buttons on the right, under the cards
-const LANE={x0:560,x1:896,top:448,ground:505};
+const LANE={x0:600,x1:970,top:448,ground:505};
 // the drawing calls of cv, moved to (ox, oy) and scaled by k, so a figure drawn around 0,0 fits the strip
 const placed=(cv,ox,oy,k)=>({
     circle:(x,y,r,c)=>cv.circle(ox+x*k,oy+y*k,r*k,c), roundRect:(x,y,w,h,r,c)=>cv.roundRect(ox+x*k,oy+y*k,w*k,h*k,r*k,c),
@@ -454,14 +454,14 @@ function stats(cv,v,a) {
         return;
     }
     text(cv,d.boostMissingBaro?'Boost uses standard air pressure until the car reports its own':v.demo?'Demo data  ·  Nothing is sent to the car':'Tap a gauge to make it big  ·  Hold it to change what it shows',44,490,18,THEME.dim);
-    button(cv,904,456,190,'Reset min/max',a.resetPeaks,'resetPeaks',false,false);
-    button(cv,1102,456,170,'Edit gauges',a.editStart,'editStart',false,false);
-    button(cv,1280,456,176,v.statsPage?'Main gauges':'More gauges',a.statsPage,'statsPage',false,false);
-    button(cv,1464,456,112,'Layout',a.layoutNext,'layoutNext',false,false);
+    button(cv,986,456,190,'Reset min/max',a.resetPeaks,'resetPeaks',false,false);
+    button(cv,1186,456,190,'Edit gauges',a.editStart,'editStart',false,false);
+    button(cv,1386,456,190,v.statsPage?'Main gauges':'More gauges',a.statsPage,'statsPage',false,false);
 }
 /*
- * Other layouts for Live Stats (Settings > Live Stats layout, or the Layout button): Cockpit, Race
- * dash, Graph view and Car view. Each draws in the same area as the six gauges, uses the theme's
+ * Other layouts for Live Stats, chosen under Settings > Live Stats layout: Cockpit, Race dash, Graph
+ * view and Car view. The six gauges are the default and their page is unchanged; only the other
+ * layouts carry a Layout button, which steps on to the next one and back to the six gauges. Each draws in the same area as the six gauges, uses the theme's
  * colours, and a tap on a reading opens it in big number mode.
  */
 const soft=(cv,x,y,w,h,r)=>cv.roundRect(x,y,w,h,r||22,withAlpha(THEME.text,0.05));
@@ -806,7 +806,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.2.4 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.2.5 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);

@@ -2,6 +2,19 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.2.5
+
+- **Smoother gauges.** The fast gauges on screen are now asked for together in
+  one request to the engine computer, so each is refreshed several times as
+  often. A gauge joins only after it has answered on its own, and if the car
+  does not answer combined requests the app goes back to one at a time by
+  itself. Not yet confirmed on a car.
+- The six-gauge page is exactly as before again: the Layout button is gone
+  from it. The other layouts are chosen under Settings → Live Stats layout;
+  inside them a Layout button steps to the next one and back.
+- README updated: big number mode, the warm-up light, the four layouts and new
+  screenshots.
+
 ## 0.2.4
 
 - Car view: each tyre shows its pressure, with its temperature beside it. The
