@@ -6,7 +6,7 @@
 
 **Your BMW's engine, tune, faults and performance timers, on the car's own screen.**
 
-An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.12 &nbsp;·&nbsp; by David Myat
+An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.13 &nbsp;·&nbsp; by David Myat
 
 [Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#ten-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
 
@@ -20,7 +20,7 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.12 &nbsp;·&n
 
 ## The tour
 
-Six tabs across the top of the screen in version 0.1.12: Live Stats, AWD / 2WD,
+Six tabs across the top of the screen in version 0.1.13: Live Stats, AWD / 2WD,
 Perf, Tune, Faults and Info. **Phone, Connect and Flash are switched off for
 now**; their sections below describe what they do when they return. The
 screenshots come from the simulation, with demo data.
@@ -32,10 +32,11 @@ screenshots come from the simulation, with demo data.
 
 ### Live Stats
 
-Two pages of six round gauges, three across and two down, each with a thick
-band, a red zone where the reading has one, and its lowest and highest value
-beside it. Signal bars, which light up green to red like a phone's signal
-meter, are an option (Settings → Live Stats gauges). Sixteen readings
+Two pages of six gauges, three across and two down. The fast readings (RPM,
+boost, boost target, engine load and torque) are signal bars that light up
+green to red like a phone's signal meter; the rest are round dials with a thick band and their lowest and highest value beside
+them. The temperatures run blue when cold to red when hot. Settings → Live
+Stats gauges switches everything to dials or to bars. Sixteen readings
 are available: RPM, boost, oil, coolant and intake temperature, fuel trims,
 fuel pressures, timing, lambda, oil pressure, boost target, load, torque and
 misfires. Twelve are on the pages; the other four wait in the pick list.
