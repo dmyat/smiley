@@ -2,7 +2,7 @@
   "id": "smiley",
   "title": "PERFORMANCE",
   "description": "Live engine gauges, tune map switching, exhaust control, fault codes for the engine or the whole car, AWD / 2WD switch, drag timer, G-meter, dyno and brake test.",
-  "version": "0.1.19",
+  "version": "0.1.20",
   "vendor": "David Myat",
   "loggingId": "SMI1",
   "iconGlyph": "gauge",
