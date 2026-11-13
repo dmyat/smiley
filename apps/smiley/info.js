@@ -52,7 +52,7 @@ function infoRows(o) {
     rows.push(['Car connection', o.demo ? 'Demo mode' : o.linked ? 'Connected' : 'Not connected']);
     // (the car's Wi-Fi address was here for the phone page, which is switched off for now)
     rows.push(['App version', o.version]);
-    rows.push(['Follow me on Instagram', '@g20smiley', true]);          // the owner's handle, picked out in the theme's second colour
+    rows.push(['Instagram', '@g20smiley', true]);          // the owner's handle, picked out in the theme's second colour
     return rows.map((r) => ({ label: r[0], value: r[1] == null || r[1] === '' ? '--' : String(r[1]), highlight: !!r[2] }));
 }
 module.exports = { infoRows, readParts, parseSvk };
