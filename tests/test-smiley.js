@@ -315,6 +315,13 @@ async function run(){
   assert(demo.view(t).history.count>0);assert(!fs.existsSync(path.join(d2,'perf-history.json')),'demo runs are not saved');
   for(let i=0;i<20;i++)demo.record({kind:'dyno',peakP:300000,peakPrpm:5800,peakT:500,peakTrpm:2400});const v1=demo.view(t).history;assert.equal(v1.rows.length,4);assert(v1.pages>1);demo.histTurn(1);assert.equal(demo.view(t).history.page,1);demo.histTurn(-5);assert.equal(demo.view(t).history.page,0);
  });
+ await test('Warm-up light goes blue, amber, green with the oil temperature, and stays off without a reading',async()=>{
+  const W=require(path.join(APP,'ui')).warmup;
+  assert.equal(W(null,'f'),null);assert.equal(W(undefined,'c'),null);assert.equal(W(NaN,'c'),null);
+  assert.equal(W(20,'f').state,'cold');assert.equal(W(20,'f').text,'ENGINE COLD 68°F');assert.equal(W(59.9,'c').state,'cold');
+  assert.equal(W(60,'c').state,'warming');assert.equal(W(70,'c').text,'WARMING UP 70°C');assert.equal(W(84.9,'f').state,'warming');
+  assert.equal(W(85,'f').state,'ready');assert.equal(W(110,'c').text,'WARMED UP');
+ });
  console.log(passed+' SMILEY integration checks passed. No vehicle connected.');
 }
 run().catch((e)=>{console.error(e.stack);process.exitCode=1;});

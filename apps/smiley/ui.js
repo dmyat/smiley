@@ -153,10 +153,24 @@ function heading(cv, label, sub, icon) {
     if (icon) titled(cv, label, icon); else text(cv,label,44,100,30,THEME.text,{font:'bold',spacing:1});
     text(cv,sub,44,130,19,THEME.dim);
 }
+/*
+ * Warm-up light, in the header on every tab, from the engine oil temperature (deg C in, shown in the
+ * driver's unit): blue while the oil is cold, amber while it warms, green once it is up to
+ * temperature. No oil reading, no light.
+ */
+const WARM={cold:60,ready:85};
+function warmup(oilC,tempUnit) {
+    if(typeof oilC!=='number'||!isFinite(oilC))return null;
+    const f=tempUnit==='f', shown=Math.round(f?oilC*9/5+32:oilC)+(f?'°F':'°C');
+    if(oilC<WARM.cold)return {state:'cold',text:'ENGINE COLD '+shown,color:'#7fb6ff'};
+    if(oilC<WARM.ready)return {state:'warming',text:'WARMING UP '+shown,color:'#f0b24a'};
+    return {state:'ready',text:'WARMED UP',color:'#86c3a0'};
+}
 function draw(cv, v, act) {
     setTheme(v.theme,v.custom);
     cv.clear(THEME.bg);
-    const badges=[{text:v.demo?'DEMO':v.paused?'PAUSED':'SMILEY',color:v.demo?THEME.warn:THEME.accent}];
+    const warm=v.paused?null:warmup(v.oilC,v.tempUnit);
+    const badges=[warm&&{text:warm.text,color:warm.color},{text:v.demo?'DEMO':v.paused?'PAUSED':'SMILEY',color:v.demo?THEME.warn:THEME.accent}].filter(Boolean);
     if(cv.chrome)G.frame(cv,THEME,TABS,v.page,badges);
     else{G.header(cv,THEME,190,0,1410,48,'',TABS,v.page,badges,true,false);text(cv,'SMILEY',25,35,28,THEME.text,{font:'bold',spacing:3});}
     if(v.page===PAGE.stats) stats(cv,v,act);
@@ -611,7 +625,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.25 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.26 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
@@ -827,4 +841,4 @@ function brakePage(cv,p) {
     });
     text(cv,r?'Peak '+r.peakG.toFixed(2)+' g':'',620,438,20,THEME.dim);
 }
-module.exports={draw,W,H,TABS,THEME,PAGE,slotAt,setTheme,PALETTES,surpriseAt,SURPRISES};
+module.exports={warmup,draw,W,H,TABS,THEME,PAGE,slotAt,setTheme,PALETTES,surpriseAt,SURPRISES};

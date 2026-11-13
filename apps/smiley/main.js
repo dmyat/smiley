@@ -157,6 +157,7 @@ mgu.run({async start(ctx){
         const demo=settings.get('demo')==='on';
         const v={page,demo,theme:settings.get('theme'),surprises:settings.get('surprises'),gaugeStyle:settings.get('gaugeStyle'),custom:{a:settings.get('customA'),b:settings.get('customB'),bg:settings.get('customBg')},paused:session.paused,busy:session.busy||refreshPending,notice,version:ctx.spec.version,
             tempUnit:settings.get('tempUnit'),pressUnit:settings.get('pressUnit'),torqueUnit:settings.get('torqueUnit')};
+        v.oilC=demo?101:telemetry.fresh('oil',30000);          // the warm-up light in the header
         v.betaGate=betaEntry===page;
         if(page===P.stats){v.stats=telemetry.snapshot(demo);v.statsPage=statsPage;v.gauges=gauges.page(statsPage);v.slots=gauges.slots;v.edit=edit;}
         else if(page===P.controls){
