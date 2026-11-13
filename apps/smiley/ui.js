@@ -173,7 +173,10 @@ function draw(cv, v, act) {
     }
     if(v.notice) { cv.fillRect(24,475,1552,39,THEME.noticeBg); text(cv,v.notice.slice(0,135),44,501,19,THEME.warn); }
     else watermark(cv,v);
-    if(THEME.snow){
+    // Snow and surprises move every frame, so they are drawn only on the GPU renderer (cv.place is set
+    // there), which is built for that. On the Basic renderer every changed frame is redrawn in software
+    // and sent as a picture, so the theme keeps its colours and stays still. (SMILEY_ANIMATE=1: previews.)
+    if(THEME.snow&&(cv.place||process.env.SMILEY_ANIMATE==='1')){
         const now=Date.now(); drawSnow(cv,now);
         // surprises play only in the empty strip at the bottom middle of the pages that have one, so they
         // never cover a gauge, a button or a line of text; not while a message or the gauge editor is up
@@ -600,7 +603,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.15 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.16 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
