@@ -159,7 +159,7 @@ function drawPanel(cv, t, x, y, w, h, title) {
 /** 270-degree radial gauge centred at (cx, cy). */
 function radial(cv, t, cx, cy, r, g) {
     const min = g.min || 0, max = g.max == null ? 100 : g.max;
-    const v = g.value, sv = sm(g, 'radial|' + cx + '|' + cy, v);
+    const v = g.value, sv = sm(g, 'radial|' + (g.id || cx + '|' + cy), v);     // g.id: the needle is eased per gauge, not per place (SMILEY)
     const f = isNum(sv) ? clamp((sv - min) / (max - min), 0, 1) : 0;
     const thick = g.thick || Math.max(8, r * 0.11);            // g.thick: an app's own band width (SMILEY)
     const S = Math.ceil(r + 16), key = ['radial', r, thick, min, max, g.ticks, g.majorEvery, g.tickLabels, g.tickDiv, g.tickDecimals, g.tickColor, g.tickLong, g.tickShort,

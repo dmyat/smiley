@@ -388,14 +388,15 @@ function stats(cv,v,a) {
         const isTemp=TEMPS.indexOf(q[6])>=0, asBar=v.gaugeStyle==='bar'||(v.gaugeStyle!=='dial'&&BARS.indexOf(q[6])>=0);
         const p=pk[q[6]], lo=p&&isFinite(p.min)?q[7](p.min):null, hi=p&&isFinite(p.max)?q[7](p.max):null;
         if(asBar){
-            barGauge(cv,x,y,q,isTemp?TEMP_RAMP:SIGNAL);
+            barGauge(cv,x,y,q,isTemp?TEMP_RAMP:SIGNAL,ZONES[q[6]]?ZONES[q[6]](f):null);
+            if(lo!=null){text(cv,'MIN',x+34,y+34,12,THEME.dim,{font:'bold',spacing:1.5});text(cv,G.fmt(lo,q[5]),x+34,y+60,22,THEME.text,{font:'num'});}
             if(hi!=null){text(cv,'MAX',x+TILE_W-34,y+34,12,THEME.dim,{font:'bold',spacing:1.5,align:'right'});text(cv,G.fmt(hi,q[5]),x+TILE_W-34,y+60,22,THEME.accent,{font:'num',align:'right'});}
-            if(q[1]==null)text(cv,'NO DATA',x+34,y+34,12,THEME.dim,{font:'bold',spacing:1.5});
+            if(q[1]==null)text(cv,'NO DATA',x+TILE_W/2,y+100,12,THEME.dim,{font:'bold',spacing:1.5,align:'center'});
             return;
         }
         // the dial: a thick band with a red zone where the reading has one, the highest value marked on
         // the band, and the lowest and highest so far written either side
-        G.radial(cv,isTemp?tempTheme():THEME,x+TILE_W/2,y+80,70,{value:q[1],unit:q[2],min:q[3],max:q[4],decimals:q[5],thick:15,ticks:10,tickColor:'#ffffff',tickLong:9,tickShort:5,
+        G.radial(cv,isTemp?tempTheme():THEME,x+TILE_W/2,y+80,70,{id:q[6],value:q[1],unit:q[2],min:q[3],max:q[4],decimals:q[5],thick:15,ticks:10,tickColor:'#ffffff',tickLong:9,tickShort:5,
             zones:ZONES[q[6]]?[{from:ZONES[q[6]](f),to:q[4],color:'crit'}]:[],peak:hi,showPeak:false});
         if(lo!=null){text(cv,'MIN',x+34,y+66,12,THEME.dim,{font:'bold',spacing:1.5});text(cv,G.fmt(lo,q[5]),x+34,y+94,24,THEME.text,{font:'num'});}
         if(hi!=null){text(cv,'MAX',x+TILE_W-34,y+66,12,THEME.dim,{font:'bold',spacing:1.5,align:'right'});text(cv,G.fmt(hi,q[5]),x+TILE_W-34,y+94,24,THEME.accent,{font:'num',align:'right'});}
@@ -409,7 +410,7 @@ function stats(cv,v,a) {
         button(cv,1336,456,240,'Done',a.editDone,'editDone',true,false);
         return;
     }
-    text(cv,d.boostMissingBaro?'Boost uses standard air pressure until the car reports its own':v.demo?'Demo data  ·  Nothing is sent to the car':'Hold a gauge to move or change it',44,490,18,THEME.dim);
+    text(cv,d.boostMissingBaro?'Boost uses standard air pressure until the car reports its own':v.demo?'Demo data  ·  Nothing is sent to the car':'Hold a gauge to change what it shows',44,490,18,THEME.dim);
     button(cv,986,456,190,'Reset min/max',a.resetPeaks,'resetPeaks',false,false);
     button(cv,1186,456,190,'Edit gauges',a.editStart,'editStart',false,false);
     button(cv,1386,456,190,v.statsPage?'Main gauges':'More gauges',a.statsPage,'statsPage',false,false);
@@ -456,16 +457,19 @@ function tempTheme(){
     if(tempThemeFor!==THEME.id||!tempThemeIs){tempThemeFor=THEME.id;tempThemeIs=Object.assign({},THEME,{name:THEME.name+' temp',hotRamp:TEMP_RAMP,ramp:TEMP_RAMP});}
     return tempThemeIs;
 }
-function barGauge(cv,x,y,q,colors) {
+function barGauge(cv,x,y,q,colors,redFrom) {
     const val=q[1], min=q[3], max=q[4], has=typeof val==='number'&&isFinite(val), cx=x+TILE_W/2;
     const s=has?G.fmt(val,q[5]):'--', tw=cv.textWidth(s,54,{font:'num'}), uw=q[2]?cv.textWidth(q[2],20,{font:'label'})+10:0;
     text(cv,s,cx-uw/2,y+64,54,has?THEME.text:THEME.dim,{font:'num',align:'center'});
     if(q[2])text(cv,q[2],cx-uw/2+tw/2+10,y+64,20,THEME.dim);
-    const f=has?G.clamp((val-min)/(max-min),0,1):0, lit=has?Math.max(f>0.005?1:0,Math.round(f*SEGMENTS)):0;
+    // the bars follow an eased value, so they step up and down smoothly; past the red line (rpm) the lit
+    // bars flash red and white like a shift light
+    const eased=has?G.smooth('signal|'+q[6],val,16):null, f=has?G.clamp((eased-min)/(max-min),0,1):0, lit=has?Math.max(f>0.005?1:0,Math.round(f*SEGMENTS)):0;
+    const over=has&&redFrom!=null&&val>=redFrom, flash=over?(Math.floor(Date.now()/110)%2?'#ffffff':'#ec3440'):null;
     const sw=22, gap=6, x0=cx-(SEGMENTS*(sw+gap)-gap)/2, base=y+142;
     for(let i=0;i<SEGMENTS;i++){
         const h=12+i*(34/(SEGMENTS-1)), on=i<lit;
-        cv.roundRect(x0+i*(sw+gap),base-h,sw,h,4,on?G.ramp(colors||SIGNAL,i/(SEGMENTS-1)):THEME.track);
+        cv.roundRect(x0+i*(sw+gap),base-h,sw,h,4,on?flash||G.ramp(colors||SIGNAL,i/(SEGMENTS-1)):THEME.track);
     }
 }
 function misfires(cv,d,x,y,w) {
@@ -596,7 +600,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.13 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.14 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
