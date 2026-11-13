@@ -82,6 +82,18 @@ mgu.run({async start(ctx){
         refreshPending=false;
     }
     let big=null;const splashAt=Date.now();          // the gauge shown full screen; the start-up animation plays once, when the app starts
+    // Tyre pressures are not read yet: which signal carries them on this car is not known. This looks
+    // through the head unit's own list of signals (read only) for likely names, so they can be shown on
+    // the Car view and noted in the log; the next version can then ask for the right one.
+    let tyreHints=[];
+    (function tyreScan(){
+        try{
+            const cat=JSON.parse(require('fs').readFileSync('/etc/oap/someip/someip-interfaces.json','utf8')), found=[];
+            Object.keys(cat.interfaces||{}).forEach((name)=>{const i=cat.interfaces[name];Object.keys((i&&i.fields)||{}).forEach((f)=>{if(/tyre|tire|rdc|rpa|wheel.*press|press.*wheel/i.test(f))found.push(name.split('.').pop()+'.'+f);});});
+            log.info('tyre signals in the catalogue ('+found.length+'): '+found.join(', '));
+            tyreHints=found.slice(0,6);
+        }catch(e){log.info('tyre signals: catalogue not readable ('+String(e&&e.code||e&&e.message||e)+')');}
+    })();
     function setPage(i){
         if(flash.programming){page=P.flash;repaint();return;}
         betaEntry=i===P.connect||i===P.flash?i:null;
@@ -160,6 +172,7 @@ mgu.run({async start(ctx){
         const demo=settings.get('demo')==='on';
         const v={page,demo,theme:settings.get('theme'),surprises:settings.get('surprises'),gaugeStyle:settings.get('gaugeStyle'),custom:{a:settings.get('customA'),b:settings.get('customB'),bg:settings.get('customBg')},paused:session.paused,busy:session.busy||refreshPending,notice,version:ctx.spec.version,
             tempUnit:settings.get('tempUnit'),pressUnit:settings.get('pressUnit'),torqueUnit:settings.get('torqueUnit')};
+        v.tyres=demo?{fl:{p:2.48,t:31},fr:{p:2.48,t:32},rl:{p:2.62,t:34},rr:{p:2.62,t:33}}:null;v.tyreHints=tyreHints;          // no tyre reading from the car yet: see tyreScan
         v.big=big;v.layout=settings.get('statsLayout');v.splash=settings.get('splash')==='off'?null:Date.now()-splashAt;
         v.oilC=demo?101:telemetry.fresh('oil',30000);          // the warm-up light in the header
         v.betaGate=betaEntry===page;

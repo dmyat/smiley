@@ -2,6 +2,14 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.2.4
+
+- Car view: each tyre shows its pressure, with its temperature beside it. The
+  numbers are samples in the demo. On the car they show "--" for now, because
+  the signal that carries tyre pressure is not known yet.
+- The app looks through the head unit's list of signals for tyre readings and
+  shows the names it finds under the car, so the next version can read them.
+
 ## 0.2.3
 
 - **Four new layouts for Live Stats**, next to the six gauges: Cockpit (one

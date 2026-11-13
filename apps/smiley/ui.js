@@ -562,8 +562,16 @@ function carLayout(cv,o) {
     cv.strokeRoundRect(X+95,Y+118,96,94,12,2,front);text(cv,'ENGINE',X+143,Y+171,15,front,{font:'bold',align:'center',spacing:2});
     cv.line(X+175,Y+60,X+175,Y+118,2,front);cv.line(X+175,Y+212,X+175,Y+270,2,front);cv.line(X+595,Y+60,X+595,Y+270,2,rear);cv.line(X+191,Y+165,X+595,Y+165,3,THEME.panelEdge);
     text(cv,'FRONT',X+175,Y+18,16,front,{font:'bold',align:'center',spacing:2});text(cv,'REAR',X+595,Y+18,16,rear,{font:'bold',align:'center',spacing:2});
-    const load=o.DEF.load;
-    text(cv,'Engine load '+shown(load)+(load[1]==null?'':' %'),X+380,Y+336,17,THEME.dim,{align:'center'});
+    // each tyre: its pressure on the tyre, its temperature beside it (bar and deg C in, shown in the driver's units)
+    const ty=o.v.tyres, psi=o.v.pressUnit==='psi', fz=o.f;
+    [['fl',120,30],['rl',540,30],['fr',120,270],['rr',540,270]].forEach((w)=>{
+        const t=ty&&ty[w[0]], p=t&&typeof t.p==='number'?(psi?t.p*14.5038:t.p).toFixed(psi?0:1)+(psi?' psi':' bar'):'--';
+        text(cv,p,X+w[1]+55,Y+w[2]+21,16,THEME.text,{font:'bold',align:'center'});
+        if(t&&typeof t.t==='number')text(cv,Math.round(fz?t.t*1.8+32:t.t)+(fz?'°F':'°C'),X+w[1]+120,Y+w[2]+21,15,THEME.dim);
+    });
+    const load=o.DEF.load, hints=o.v.tyreHints||[];
+    text(cv,'Engine load '+shown(load)+(load[1]==null?'':' %'),X+380,Y+334,17,THEME.dim,{align:'center'});
+    text(cv,(ty?(o.v.demo?'Tyre numbers are samples in the demo':''):hints.length?'Tyre signals on this car: '+hints.join(', '):'Tyre pressure: no reading from the car yet').slice(0,110),X+380,Y+358,14,THEME.dim,{align:'center'});
 }
 const LAYOUTS={
     cockpit:{name:'Cockpit',draw:cockpitLayout,keys:['rpm','boost','oil','coolant','iat','torque']},
@@ -798,7 +806,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.2.3 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.2.4 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
