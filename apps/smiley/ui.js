@@ -611,13 +611,19 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.18 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.19 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
     const w=cv.textWidth('SMILEY',size,o);
     cv.circle(24+w+10,y-5,2.5,W);
-    cv.text('by David. v.'+v.version,24+w+20,y,size,W,{font:'label'});
+    const by='by David. v.'+v.version, bw=cv.textWidth(by,size,{font:'label'});
+    cv.text(by,24+w+20,y,size,W,{font:'label'});
+    // the owner's Instagram, on the same quiet line: small, but in the theme's second colour so it is noticed
+    const x=24+w+20+bw+12, f='FOLLOW ME ON IG', fo={font:'label',spacing:1};
+    cv.circle(x,y-5,2.5,W);
+    cv.text(f,x+10,y,12,withAlpha('#ffffff',0.72),fo);
+    cv.text('@g20smiley',x+10+cv.textWidth(f,12,fo)+8,y,size,THEME.accent2||THEME.accent,{font:'bold'});
 }
 function perf(cv,v,a) {
     const p=v.perf, names={drag:'Drag timer',g:'G-meter',dyno:'Dyno',brake:'Brake test'};
