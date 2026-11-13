@@ -201,6 +201,21 @@ async function run(){
   assert(shown>slots*0.45&&shown<slots*0.75,'shown in '+shown+' of '+slots+' slots');assert.deepStrictEqual(Array.from(seen).sort(),['sleigh','snowman','star']);
   let on=0;for(let t=0;t<75000*40;t+=250)if(UI.surpriseAt(2e12+t))on++;assert(on*250<75000*40*0.08,'on screen well under a tenth of the time');
  });
+ await test('Info: hardware and software numbers come from the BMW parts list when the generic reads are empty; the tune row is honest',async()=>{
+  const {infoRows,parseSvk,readParts}=require(path.join(APP,'info'));
+  const head=[1,1,0,3, 0x21,0x05,0x12, 0,0,0,0,0,0, 0,0,0,0], e=(c,id,v)=>[c].concat(id,v);
+  const svk=head.concat(e(1,[0,0,0x12,0x34],[1,2,3]),e(6,[0,0,0x22,0x22],[4,5,6]),e(8,[0,0,0xAB,0xCD],[20,30,40]));
+  const p=parseSvk(svk);assert.equal(p.hw,'HWEL 00001234  001.002.003');assert.equal(p.sw,'SWFL 0000ABCD  020.030.040');assert.equal(p.parts.length,3);
+  assert.equal(parseSvk([1,2,3]),null);assert.equal(parseSvk(head.concat(e(0x77,[0,0,0,1],[1,1,1]),e(1,[0,0,0,2],[1,1,1]),e(8,[0,0,0,3],[1,1,1]))),null,'an unknown layout shows nothing');
+  assert.equal(await readParts({available:false}),null);
+  assert.deepStrictEqual(await readParts({available:true,log:quiet,readDid:async()=>({ok:false,reason:'timeout'})}),null);
+  assert.equal((await readParts({available:true,log:quiet,readDid:async(d)=>{assert.deepStrictEqual(d,[0xF1,0x01]);return {ok:true,data:svk};}})).hw,p.hw);
+  const row=(o,l)=>infoRows(Object.assign({ident:{present:true},linked:true,version:'x'},o)).find((r)=>r.label===l).value;
+  assert.equal(row({parts:p},'Hardware number'),p.hw);assert.equal(row({ident:{present:true,hw:'aa bb'},parts:p},'Hardware number'),'AA BB','the generic read wins when it answers');
+  assert.equal(row({},'Hardware number'),'--');
+  assert.equal(row({tuner:'mhd'},'Tune'),'MHD (your choice on the Tune tab)');assert.equal(row({tuner:'bm3',bm3Verified:true},'Tune'),'bootmod3 (recognised)');
+  assert.equal(row({tuner:'bm3'},'Tune'),'bootmod3 (chosen, not recognised yet)');assert.equal(row({},'Tune'),'None chosen on the Tune tab');
+ });
  await test('A press is matched to the gauge card under the finger',async()=>{
   assert.equal(UI.slotAt(30,60),0);assert.equal(UI.slotAt(24+522*2+100,58+100),2);assert.equal(UI.slotAt(24+522+10,58+196+10),4);assert.equal(UI.slotAt(24+522*2+10,58+196+10),5);assert.equal(UI.slotAt(24+514,100),-1,'the gap between cards');assert.equal(UI.slotAt(800,470),-1,'the buttons below');assert.equal(UI.slotAt(5,5),-1);
  });

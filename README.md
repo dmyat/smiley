@@ -6,7 +6,7 @@
 
 **Your BMW's engine, tune, faults and performance timers, on the car's own screen.**
 
-An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.9 &nbsp;·&nbsp; by David Myat
+An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.10 &nbsp;·&nbsp; by David Myat
 
 [Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#ten-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
 
@@ -20,7 +20,7 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.9 &nbsp;·&nb
 
 ## The tour
 
-Six tabs across the top of the screen in version 0.1.9: Live Stats, AWD / 2WD,
+Six tabs across the top of the screen in version 0.1.10: Live Stats, AWD / 2WD,
 Perf, Tune, Faults and Info. **Phone, Connect and Flash are switched off for
 now**; their sections below describe what they do when they return. The
 screenshots come from the simulation, with demo data.
@@ -32,7 +32,8 @@ screenshots come from the simulation, with demo data.
 
 ### Live Stats
 
-Two pages of six round gauges, three across and two down. Sixteen readings
+Two pages of six gauges, three across and two down, drawn as straight bars
+or as round dials (Settings → Live Stats gauges). Sixteen readings
 are available: RPM, boost, oil, coolant and intake temperature, fuel trims,
 fuel pressures, timing, lambda, oil pressure, boost target, load, torque and
 misfires. Twelve are on the pages; the other four wait in the pick list.
@@ -266,7 +267,7 @@ thing that looks wrong.**
 
 ```sh
 python3 kit/tools/build.py --preview-only smiley   # stage the app without the BMW SDK
-node tests/test-smiley.js                          # 46 integration checks
+node tests/test-smiley.js                          # 47 integration checks
 node tests/test-native-flow.js                     # the app on the head-unit stub
 node tests/test-edit-gauges.js                     # press-and-hold gauge editing
 node tests/test-phone-net.js                       # the phone access helper, against a pretend firewall

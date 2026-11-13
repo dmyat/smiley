@@ -381,6 +381,7 @@ function stats(cv,v,a) {
             if(cv.target)cv.target(x,y,TILE_W,TILE_H,()=>a.editTap(base+i),'slot'+i);
         }
         if(!q){misfires(cv,d,x,y,TILE_W);return;}
+        if(v.gaugeStyle!=='dial'){barGauge(cv,x,y,q);if(q[1]==null)text(cv,q[6]==='stft2'?'IF FITTED':'NO DATA',x+TILE_W-16,y+24,12,THEME.dim,{align:'right'});return;}
         G.radial(cv,THEME,x+TILE_W/2,y+76,64,{value:q[1],unit:q[2],min:q[3],max:q[4],decimals:q[5],ticks:10,tickColor:'#ffffff',tickLong:10,tickShort:6});
         if(q[1]==null)text(cv,q[6]==='stft2'?'IF FITTED':'NO DATA',x+TILE_W-16,y+24,12,THEME.dim,{align:'right'});
     });
@@ -419,6 +420,29 @@ function pickList(cv,v,a,x,y) {
         text(cv,here?'HERE':at<PER_PAGE?'PAGE 1':at<2*PER_PAGE?'PAGE 2':'OFF',bx+bw-10,by+23,12,here?THEME.ink:at<2*PER_PAGE?THEME.dim:THEME.off,{align:'right',font:'bold',spacing:1});
         if(cv.target)cv.target(bx,by,bw,bh,()=>a.editSet(id),'pick-'+id);
     });
+}
+/**
+ * A gauge as a straight bar (Settings > Live Stats gauges > Bars): the number large above, the bar
+ * under it filled from the start of its scale - or from zero when the scale runs both ways (trims,
+ * timing, boost) - in the colour of where it stands, with the two ends of the scale below.
+ * q = [label, value, unit, min, max, decimals] as for the dial.
+ */
+function barGauge(cv,x,y,q) {
+    const val=q[1], min=q[3], max=q[4], has=typeof val==='number'&&isFinite(val), cx=x+TILE_W/2;
+    const s=has?G.fmt(val,q[5]):'--', tw=cv.textWidth(s,62,{font:'num'}), uw=q[2]?cv.textWidth(q[2],22,{font:'label'})+10:0;
+    text(cv,s,cx-uw/2,y+78,62,has?THEME.text:THEME.dim,{font:'num',align:'center'});
+    if(q[2])text(cv,q[2],cx-uw/2+tw/2+10,y+78,22,THEME.dim);
+    const bx=x+40, bw=TILE_W-80, by=y+100, bh=18, X=(n)=>bx+G.clamp((n-min)/(max-min),0,1)*bw;
+    cv.roundRect(bx,by,bw,bh,9,THEME.track);
+    if(has){
+        const f=G.clamp((val-min)/(max-min),0,1), zero=min<0&&max>0?X(0):bx, xe=X(val), a=Math.min(zero,xe), b=Math.max(zero,xe);
+        const col=G.ramp(THEME.hotRamp||THEME.ramp,f);
+        if(b-a>=2)cv.roundRect(a,by,Math.max(b-a,bh),bh,9,col);
+        cv.roundRect(xe-3,by-4,6,bh+8,3,THEME.text);                       // the marker at the value
+        if(zero!==bx)cv.fillRect(zero-1,by-3,2,bh+6,THEME.tick);            // the zero line of a two-way scale
+    }
+    const end=(n)=>G.fmt(n,Number.isInteger(n)?0:1);
+    text(cv,end(min),bx,y+140,13,THEME.dim); text(cv,end(max),bx+bw,y+140,13,THEME.dim,{align:'right'});
 }
 function misfires(cv,d,x,y,w) {
     const m=d.misfires;
@@ -548,7 +572,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.9 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.10 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);

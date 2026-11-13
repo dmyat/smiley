@@ -10,7 +10,7 @@ const {Telemetry}=require('./telemetry');
 const {Faults}=require('./faults');
 const {XDriveControl}=require('./xdrive');
 const {inspectNetwork,PhoneServer,wifiAddress}=require('./phone');
-const {infoRows}=require('./info');
+const {infoRows,readParts}=require('./info');
 const {Perf}=require('./perf');
 const {GaugeLayout,PER_PAGE}=require('./layout');
 const {FlashWorkspace}=require('./flash-workspace');
@@ -24,6 +24,7 @@ mgu.run({async start(ctx){
     let page=0,faultPage=0,mapChoice=1,notice='',refreshPending=false,visible=true,statsPage=0,betaEntry=null;
     const P=UI.PAGE;
     const gauges=new GaugeLayout(ctx.dataDir,log);
+    let parts=null;                // the engine computer's own parts list, read once with the rest (info.js)
     let edit=null;                 // editing the gauge layout: { picked: slot 0-15 | null }
     // The performance tools and the shift lights read the telemetry's drive feed; they send nothing.
     telemetry.setDemo(session.demo);
@@ -70,7 +71,8 @@ mgu.run({async start(ctx){
     if(flash.recovery&&!session.demo)session.paused=true;
     async function refresh(){
         if(session.demo)return;
-        await session.action(async()=>{await controller.refresh();await tune.start(link);await xdrive.start(link);});
+        await session.action(async()=>{await controller.refresh();await tune.start(link);await xdrive.start(link);
+            try{parts=await readParts(link);}catch(e){log.warn('parts list: '+String(e&&e.message||e));}});
         refreshPending=false;
     }
     function setPage(i){
@@ -146,7 +148,7 @@ mgu.run({async start(ctx){
     // One frame. Only the page on screen is worked out: the other tabs cost nothing while hidden.
     function frame(){
         const demo=settings.get('demo')==='on';
-        const v={page,demo,theme:settings.get('theme'),surprises:settings.get('surprises'),custom:{a:settings.get('customA'),b:settings.get('customB'),bg:settings.get('customBg')},paused:session.paused,busy:session.busy||refreshPending,notice,version:ctx.spec.version,
+        const v={page,demo,theme:settings.get('theme'),surprises:settings.get('surprises'),gaugeStyle:settings.get('gaugeStyle'),custom:{a:settings.get('customA'),b:settings.get('customB'),bg:settings.get('customBg')},paused:session.paused,busy:session.busy||refreshPending,notice,version:ctx.spec.version,
             tempUnit:settings.get('tempUnit'),pressUnit:settings.get('pressUnit'),torqueUnit:settings.get('torqueUnit')};
         v.betaGate=betaEntry===page;
         if(page===P.stats){v.stats=telemetry.snapshot(demo);v.statsPage=statsPage;v.gauges=gauges.page(statsPage);v.slots=gauges.slots;v.edit=edit;}
@@ -159,7 +161,7 @@ mgu.run({async start(ctx){
         else if(page===P.perf)v.perf=perf.view(Date.now());
         else if(page===P.phone)v.phone=phone.view();
         else if(page===P.connect||page===P.flash)v.flash=flash.view();
-        else if(page===P.info)v.info=infoRows({ident:controller.ident,linked:link.available,demo,wifi:wifiAddress(),version:ctx.spec.version});
+        else if(page===P.info)v.info=infoRows({ident:controller.ident,parts,tuner:tune.tuner,bm3Verified:tune.verified,linked:link.available,demo,wifi:wifiAddress(),version:ctx.spec.version});
         return v;
     }
     // Frames never overlap: the drawing surface is reused, so a frame asked for while one is being
