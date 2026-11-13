@@ -20,6 +20,8 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.2.0 &nbsp;·&nb
 
 ## The tour
 
+What changed in each version: [release notes](CHANGELOG.md).
+
 Six tabs across the top of the screen in version 0.2.0: Live Stats, AWD / 2WD,
 Perf, Tune, Faults and Info. **Phone, Connect and Flash are switched off for
 now**; their sections below describe what they do when they return. The
