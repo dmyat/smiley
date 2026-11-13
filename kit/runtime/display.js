@@ -424,7 +424,9 @@ class Display {
             if (phase === 3 && this.dragging && !this.sheet) { this.dragging = false; this.ownDown = null; return; }
             if (phase === 3 && !this.dragging && key && key === this.ownDown && (tab || tgt)) {
                 this.ownDown = null;
-                if (tab) this._openTab(tab.i);
+                // a tab opened by touch: the controller's mark (the box round a tab) is dropped, or it stays on
+                // the tab the knob was last on while another page is open (SMILEY)
+                if (tab) { this._focus(null); this._openTab(tab.i); }
                 else {
                     this.pressed = key; this.pressedT = Date.now(); this._repaint();
                     setTimeout(() => this._repaint(), 320);

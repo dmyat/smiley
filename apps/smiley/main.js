@@ -24,6 +24,7 @@ mgu.run({async start(ctx){
     let page=0,faultPage=0,mapChoice=1,notice='',refreshPending=false,visible=true,statsPage=0,betaEntry=null;
     const P=UI.PAGE;
     const gauges=new GaugeLayout(ctx.dataDir,log);
+    let ident=null,identTries=0,identAt=Date.now();    // the retries of the engine computer's identification (see the timer below)
     let parts=null;                // the engine computer's own parts list, read once with the rest (info.js)
     let edit=null;                 // editing the gauge layout: { picked: slot 0-15 | null }
     // The performance tools and the shift lights read the telemetry's drive feed; they send nothing.
@@ -72,6 +73,11 @@ mgu.run({async start(ctx){
     async function refresh(){
         if(session.demo)return;
         await session.action(async()=>{await controller.refresh();await tune.start(link);await xdrive.start(link);
+            // The Info page's own copy of who the engine computer is. The exhaust controller reads it only
+            // with Exhaust control on (off, it sends nothing at all); these reads only ask, so the page
+            // gets them either way.
+            ident=controller.ident&&controller.ident.present?controller.ident:null;
+            if(!ident&&link.available){try{const id=await link.identifyDme(controller.platform);if(id&&id.present)ident=id;}catch(e){log.warn('identify: '+String(e&&e.message||e));}}
             try{parts=await readParts(link);}catch(e){log.warn('parts list: '+String(e&&e.message||e));}});
         refreshPending=false;
     }
@@ -161,7 +167,7 @@ mgu.run({async start(ctx){
         else if(page===P.perf)v.perf=perf.view(Date.now());
         else if(page===P.phone)v.phone=phone.view();
         else if(page===P.connect||page===P.flash)v.flash=flash.view();
-        else if(page===P.info)v.info=infoRows({ident:controller.ident,parts,tuner:tune.tuner,bm3Verified:tune.verified,linked:link.available,demo,wifi:wifiAddress(),version:ctx.spec.version});
+        else if(page===P.info)v.info=infoRows({ident:ident||controller.ident,parts,tuner:tune.tuner,bm3Verified:tune.verified,linked:link.available,demo,wifi:wifiAddress(),version:ctx.spec.version});
         return v;
     }
     // Frames never overlap: the drawing surface is reused, so a frame asked for while one is being
@@ -242,7 +248,7 @@ mgu.run({async start(ctx){
         repaint();
     });
     if(ui.onVisible)ui.onVisible((name,on)=>{if(name==='MAIN')visible=on;});
-    link.onAvailable((on)=>{refreshPending=!!on&&!session.demo;telemetry.times={};tune._reset();controller.state.accepted=null;controller.state.confirmed='UNKNOWN';});
+    link.onAvailable((on)=>{refreshPending=!!on&&!session.demo;identTries=0;identAt=Date.now();telemetry.times={};tune._reset();controller.state.accepted=null;controller.state.confirmed='UNKNOWN';});
     // No map/exhaust/fault-clear action at startup. Tuners and exhaust ship disabled.
     if(!session.demo&&!session.paused)await action(refresh)();
     setInterval(()=>{
@@ -250,6 +256,10 @@ mgu.run({async start(ctx){
         telemetry.setFocus(page===P.stats?gauges.page(statsPage):null);
         // the min / max keep counting while another tab is shown (four times a second is plenty)
         if(page!==P.stats&&(++peakTick%6===0))telemetry.snapshot(session.demo);
+        // The first read of the engine computer can go unanswered (the car just woken, another app asking
+        // at the same moment), which left the VIN and the type blank for the whole drive: ask again, a
+        // few times, a few seconds apart.
+        if(!refreshPending&&link.available&&!session.demo&&!session.paused&&!session.busy&&!(ident&&ident.present)&&identTries<8&&Date.now()-identAt>4000){identTries++;identAt=Date.now();refreshPending=true;}
         if(refreshPending&&!session.busy&&!session.paused)action(refresh)();
         else if((visible||phone.server)&&!session.demo)telemetry.poll().catch((e)=>log.warn(String(e)));
         if(!session.demo&&!session.paused)auto.tick().catch((e)=>log.warn(String(e)));

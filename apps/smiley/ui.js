@@ -399,7 +399,7 @@ function stats(cv,v,a) {
         }
         // the dial: a thick band with a red zone where the reading has one, the highest value marked on
         // the band, and the lowest and highest so far written either side
-        G.radial(cv,isTemp?tempTheme():THEME,x+TILE_W/2,y+80,70,{id:q[6],value:q[1],unit:q[2],min:q[3],max:q[4],decimals:q[5],thick:15,ticks:10,tickColor:'#ffffff',tickLong:9,tickShort:5,
+        G.radial(cv,isTemp?tempTheme():calmTheme(),x+TILE_W/2,y+80,70,{id:q[6],value:q[1],unit:q[2],min:q[3],max:q[4],decimals:q[5],thick:15,ticks:10,tickColor:'#ffffff',tickLong:9,tickShort:5,
             zones:ZONES[q[6]]?[{from:ZONES[q[6]](f),to:q[4],color:'crit'}]:[],peak:hi,showPeak:false});
         if(lo!=null){text(cv,'MIN',x+34,y+66,12,THEME.dim,{font:'bold',spacing:1.5});text(cv,G.fmt(lo,q[5]),x+34,y+94,24,THEME.text,{font:'num'});}
         if(hi!=null){text(cv,'MAX',x+TILE_W-34,y+66,12,THEME.dim,{font:'bold',spacing:1.5,align:'right'});text(cv,G.fmt(hi,q[5]),x+TILE_W-34,y+94,24,THEME.accent,{font:'num',align:'right'});}
@@ -459,6 +459,14 @@ let tempThemeFor=null, tempThemeIs=null;
 function tempTheme(){
     if(tempThemeFor!==THEME.id||!tempThemeIs){tempThemeFor=THEME.id;tempThemeIs=Object.assign({},THEME,{name:THEME.name+' temp',hotRamp:TEMP_RAMP,ramp:TEMP_RAMP});}
     return tempThemeIs;
+}
+// The other dials (pressures, trims, timing, lambda) have no "hot" end, so their band is one calm colour:
+// a normal fuel pressure near the top of its scale, or a trim sitting at zero in the middle of its
+// scale, no longer reads as orange or red.
+let calmThemeFor=null, calmThemeIs=null;
+function calmTheme(){
+    if(calmThemeFor!==THEME.id||!calmThemeIs){const c=THEME.accent2||THEME.accent;calmThemeFor=THEME.id;calmThemeIs=Object.assign({},THEME,{name:THEME.name+' calm',hotRamp:[c,c],ramp:[c,c]});}
+    return calmThemeIs;
 }
 function barGauge(cv,x,y,q,colors,redFrom) {
     const val=q[1], min=q[3], max=q[4], has=typeof val==='number'&&isFinite(val), cx=x+TILE_W/2;
@@ -603,7 +611,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.16 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.17 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
