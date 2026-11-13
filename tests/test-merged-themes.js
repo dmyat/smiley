@@ -19,9 +19,9 @@ const tap=async key=>{await hu.loopFn();const t=targets().find(t=>t.key===key);a
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 setTimeout(async()=>{
  try{
-  assert.equal(hu.spec.version,'0.1.8');assert.equal(UI.TABS.length,9);
+  assert.equal(hu.spec.version,'0.1.9');assert.equal(UI.TABS.length,9);
   const themes=hu.spec.settings.find(s=>s.key==='theme').options.map(o=>o[0]);
-  assert.deepStrictEqual(themes,['smiley','l_burgundy','j_amethyst','l_midnight','s_green','s_m','spider','xmas','custom']);
+  assert.deepStrictEqual(themes,['smiley','l_burgundy','j_amethyst','l_midnight','s_green','s_m','spider','xmas','xmas_red','custom']);
   setting('customA','teal');setting('customB','gold');setting('customBg','graphite');
   for(const theme of themes){
    setting('theme',theme);await hu.display.onTab(P.connect);await hu.loopFn();

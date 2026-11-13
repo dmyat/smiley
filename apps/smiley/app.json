@@ -2,7 +2,7 @@
   "id": "smiley",
   "title": "SMILEY",
   "description": "Live engine gauges, tune map switching, exhaust control, fault codes for the engine or the whole car, AWD / 2WD switch, drag timer, G-meter, dyno and brake test.",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "vendor": "David Myat",
   "loggingId": "SMI1",
   "iconGlyph": "gauge",
@@ -330,14 +330,14 @@
         [
           "spider",
           "Spider Red & Blue"
-        ], ["xmas", "Christmas (snow)"],
+        ], ["xmas", "Christmas Green (snow)"], ["xmas_red", "Christmas Red (snow)"],
         [
           "custom",
           "Custom (colours below)"
         ]
       ]
     },
-    {"key": "surprises", "label": "Christmas surprises (Christmas theme)", "type": "choice", "default": "on", "options": [["on", "On"], ["off", "Off"]]},
+    {"key": "surprises", "label": "Christmas surprises (Christmas themes)", "type": "choice", "default": "on", "options": [["on", "On"], ["off", "Off"]]},
     {
       "key": "customA",
       "label": "Custom theme: main colour",

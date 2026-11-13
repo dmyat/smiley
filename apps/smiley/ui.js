@@ -82,6 +82,11 @@ PALETTES.xmas = Object.assign(look('CHRISTMAS', { bg: '#07130f', bg2: '#0a1a14',
     text: '#f4f7f2', dim: '#9db3a6', track: '#1b3529', tick: '#6f8f7e', a: '#d8434a', b: '#e6c877', cold: '#bcd9ee',
     ramp: ['#2f8f5a', '#e6c877', '#d8434a'], hot: ['#e6c877', '#eda35a', '#e2675c', '#ff3b47'],
     ink: '#1a0709', off: '#587264', notice: '#2a1418' }), { snow: true });
+// A second Christmas look: deep cranberry red with gold and snow white (the first is night green).
+PALETTES.xmas_red = Object.assign(look('CHRISTMAS RED', { bg: '#160607', bg2: '#1f090b', panel: '#2c0d10', card: '#24090c', edge: '#5e2227',
+    text: '#fbf4ee', dim: '#c9a9a4', track: '#3c1418', tick: '#9a6b68', a: '#e6c877', b: '#f4f1ea', cold: '#bcd9ee',
+    ramp: ['#f4f1ea', '#e6c877', '#3fae6f'], hot: ['#e6c877', '#f0a04c', '#ff7a5c', '#ffffff'],
+    ink: '#2a0a0c', off: '#7c5553', notice: '#3a1216', crit: '#ff8f7a', warn: '#ffd27a' }), { snow: true });
 PALETTES.custom = customPalette(null);
 // the car's own header and frame are drawn by the kit from its theme table: give it the same colours
 try { const KT = require('./kit/themes'); Object.keys(PALETTES).forEach((id) => { KT.THEMES[id] = PALETTES[id]; }); } catch (e) { /* previews without the kit */ }
@@ -543,7 +548,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.8 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.9 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);

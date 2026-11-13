@@ -6,9 +6,9 @@
 
 **Your BMW's engine, tune, faults and performance timers, on the car's own screen.**
 
-An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.8 &nbsp;·&nbsp; by David Myat
+An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.9 &nbsp;·&nbsp; by David Myat
 
-[Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#nine-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
+[Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#ten-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
 
 <img src="docs/screenshots/live-stats.png" alt="Live Stats: eight round engine gauges on a black and gold screen">
 
@@ -20,7 +20,7 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.8 &nbsp;·&nb
 
 ## The tour
 
-Six tabs across the top of the screen in version 0.1.8: Live Stats, AWD / 2WD,
+Six tabs across the top of the screen in version 0.1.9: Live Stats, AWD / 2WD,
 Perf, Tune, Faults and Info. **Phone, Connect and Flash are switched off for
 now**; their sections below describe what they do when they return. The
 screenshots come from the simulation, with demo data.
@@ -145,10 +145,11 @@ the app version. Read once when SMILEY starts.
 </tr>
 </table>
 
-## Nine looks
+## Ten looks
 
-Pick one under Settings → Theme. Eight are ready-made; the ninth is yours.
-**Christmas** is the theme a new install starts with for now. It adds gently
+Pick one under Settings → Theme. Nine are ready-made; the tenth is yours.
+**Christmas Green** is the theme a new install starts with for now, and
+**Christmas Red** is its cranberry-and-gold twin. Both add gently
 falling snow and, now and then, a small surprise in the empty strip at the
 bottom of Live Stats, Perf and Info: Santa's sleigh, a shooting star, or a
 snowman who peeks up and waves. They never cover a gauge, a button or text,
@@ -159,8 +160,8 @@ and can be switched off under Settings → Christmas surprises.
 | | | | |
 |---|---|---|---|
 | Noir & Champagne | Burgundy & Gold | Amethyst & Gold | Midnight & Gold |
-| Racing Green | Motorsport | Spider Red & Blue | Christmas (snow) |
-| **Custom** | | | |
+| Racing Green | Motorsport | Spider Red & Blue | Christmas Green (snow) |
+| Christmas Red (snow) | **Custom** | | |
 
 **Custom** builds a theme from three choices in Settings: a main colour, a
 second colour and a background. Twelve colours and four backgrounds give 576
