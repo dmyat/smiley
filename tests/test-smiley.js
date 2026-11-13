@@ -186,16 +186,23 @@ async function run(){
   const bad=new Telemetry(c,new Session(),()=>now);assert.deepStrictEqual(bad.learned,{torque:{min:0,max:520}});
  });
  await test('Gauge layout: swapping and changing never loses or repeats a gauge, and is remembered',async()=>{
-  const dir=fs.mkdtempSync(path.join(tmp,'layout-'));const g=new GaugeLayout(dir,quiet);assert.deepStrictEqual(g.slots,DEFAULT);assert.deepStrictEqual(g.page(1)[0],'timing');
-  assert(g.swap(0,9));assert.equal(g.slots[0],'lambda');assert.equal(g.slots[9],'rpm');assert.equal(g.swap(3,3),false);assert.equal(g.swap(3,99),false);
+  const dir=fs.mkdtempSync(path.join(tmp,'layout-'));const g=new GaugeLayout(dir,quiet);assert.deepStrictEqual(g.slots,DEFAULT);assert.equal(g.page(0).length,6);assert.deepStrictEqual(g.page(1)[0],'hpfp');assert.deepStrictEqual(g.slots.slice(12),['stft1','stft2','lpfp','misfire'],'four gauges start off the pages');
+  assert(g.set(1,'lpfp'));assert.equal(g.slots[1],'lpfp');assert.equal(g.slots[14],'boost','the gauge that was there goes to the spare place');assert(g.set(1,'boost'));assert(!g.set(1,'nope'));assert(!g.set(99,'rpm'));assert.deepStrictEqual(g.slots,DEFAULT);
+  assert(g.swap(0,9));assert.equal(g.slots[0],'boostTarget');assert.equal(g.slots[9],'rpm');assert.equal(g.swap(3,3),false);assert.equal(g.swap(3,99),false);
   const was=g.slots[1],next=g.change(1,1);assert.equal(g.slots[1],next);assert(g.slots.indexOf(was)>=0&&g.slots.indexOf(was)!==1,'the old gauge moved, it was not dropped');
   for(let i=0;i<40;i++){g.change(i%16,1);g.swap(i%16,(i*7)%16);assert(GaugeLayout.valid(g.slots));assert.equal(new Set(g.slots).size,16);}
   const again=new GaugeLayout(dir,quiet);assert.deepStrictEqual(again.slots,g.slots);again.reset();assert.deepStrictEqual(new GaugeLayout(dir,quiet).slots,DEFAULT);
   fs.writeFileSync(path.join(dir,'gauges.json'),JSON.stringify({slots:['rpm','rpm']}));assert.deepStrictEqual(new GaugeLayout(dir,quiet).slots,DEFAULT);
   fs.writeFileSync(path.join(dir,'gauges.json'),'{oops');assert.deepStrictEqual(new GaugeLayout(dir,quiet).slots,DEFAULT);
  });
+ await test('Christmas surprises: brief, of a known kind, in roughly three slots of five, and none between',async()=>{
+  let shown=0;const slots=400,seen=new Set();
+  for(let k=0;k<slots;k++){let hit=null;for(let t=0;t<75000;t+=500){const s=UI.surpriseAt(1e12+k*75000+t);if(s){hit=s;assert(UI.SURPRISES[s.kind]===s.dur);assert(s.p>=0&&s.p<=1);assert(s.a>=0&&s.a<1);}}if(hit){shown++;seen.add(hit.kind);}}
+  assert(shown>slots*0.45&&shown<slots*0.75,'shown in '+shown+' of '+slots+' slots');assert.deepStrictEqual(Array.from(seen).sort(),['sleigh','snowman','star']);
+  let on=0;for(let t=0;t<75000*40;t+=250)if(UI.surpriseAt(2e12+t))on++;assert(on*250<75000*40*0.08,'on screen well under a tenth of the time');
+ });
  await test('A press is matched to the gauge card under the finger',async()=>{
-  assert.equal(UI.slotAt(30,60),0);assert.equal(UI.slotAt(24+390*3+100,58+100),3);assert.equal(UI.slotAt(24+390+10,58+196+10),5);assert.equal(UI.slotAt(24+380,100),-1,'the gap between cards');assert.equal(UI.slotAt(800,470),-1,'the buttons below');assert.equal(UI.slotAt(5,5),-1);
+  assert.equal(UI.slotAt(30,60),0);assert.equal(UI.slotAt(24+522*2+100,58+100),2);assert.equal(UI.slotAt(24+522+10,58+196+10),4);assert.equal(UI.slotAt(24+522*2+10,58+196+10),5);assert.equal(UI.slotAt(24+514,100),-1,'the gap between cards');assert.equal(UI.slotAt(800,470),-1,'the buttons below');assert.equal(UI.slotAt(5,5),-1);
  });
  await test('Only the fast-moving gauges on screen are read every turn',async()=>{
   const t=new Telemetry(ctx(),new Session());t.setFocus(['rpm','boost','oil','misfire','lambda']);assert.deepStrictEqual(t.focus,['boost','lambda']);t.setFocus(null);assert.equal(t.focus,null);

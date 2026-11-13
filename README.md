@@ -6,7 +6,7 @@
 
 **Your BMW's engine, tune, faults and performance timers, on the car's own screen.**
 
-An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.6 &nbsp;·&nbsp; by David Myat
+An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.7 &nbsp;·&nbsp; by David Myat
 
 [Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#nine-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
 
@@ -20,7 +20,7 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.6 &nbsp;·&nb
 
 ## The tour
 
-Six tabs across the top of the screen in version 0.1.6: Live Stats, AWD / 2WD,
+Six tabs across the top of the screen in version 0.1.7: Live Stats, AWD / 2WD,
 Perf, Tune, Faults and Info. **Phone, Connect and Flash are switched off for
 now**; their sections below describe what they do when they return. The
 screenshots come from the simulation, with demo data.
@@ -32,11 +32,13 @@ screenshots come from the simulation, with demo data.
 
 ### Live Stats
 
-Sixteen engine readings on two pages of round gauges: RPM, boost, oil,
-coolant and intake temperature, fuel trims, fuel pressures, timing, lambda,
-oil pressure, boost target, load, torque and misfires.
+Two pages of six round gauges, three across and two down. Sixteen readings
+are available: RPM, boost, oil, coolant and intake temperature, fuel trims,
+fuel pressures, timing, lambda, oil pressure, boost target, load, torque and
+misfires. Twelve are on the pages; the other four wait in the pick list.
 
-Press and hold a gauge to move it or swap it for another.
+Press and hold a gauge, or tap Edit gauges and then a gauge, and choose from
+the list what that place shows.
 
 </td>
 </tr>
@@ -146,7 +148,10 @@ the app version. Read once when SMILEY starts.
 ## Nine looks
 
 Pick one under Settings → Theme. Eight are ready-made; the ninth is yours.
-**Christmas** adds gently falling snow over every page.
+**Christmas** is the theme a new install starts with for now. It adds gently
+falling snow and, now and then, a surprise: Santa's sleigh crossing the
+screen, a shooting star, or a snowman who pops up and waves. The surprises
+can be switched off under Settings → Christmas surprises.
 
 <img src="docs/screenshots/themes.png" alt="The eight themes side by side on the Live Stats page">
 
@@ -259,7 +264,7 @@ thing that looks wrong.**
 
 ```sh
 python3 kit/tools/build.py --preview-only smiley   # stage the app without the BMW SDK
-node tests/test-smiley.js                          # 45 integration checks
+node tests/test-smiley.js                          # 46 integration checks
 node tests/test-native-flow.js                     # the app on the head-unit stub
 node tests/test-edit-gauges.js                     # press-and-hold gauge editing
 node tests/test-phone-net.js                       # the phone access helper, against a pretend firewall

@@ -2,17 +2,19 @@
 /**
  * layout.js - which gauge sits where on the two Live Stats pages.
  *
- * Sixteen slots (0-7 the main page, 8-15 the second), each holding one gauge, each gauge exactly
- * once. The owner rearranges them on the car: swap two slots, or change a slot to another gauge
- * (which swaps with wherever that gauge was, so nothing is ever lost or shown twice). Kept in
- * data/gauges.json; a file that is not a full set of the known gauges is ignored.
+ * Sixteen slots, each holding one gauge, each gauge exactly once. Slots 0-5 are the main page and
+ * 6-11 the second (three across, two down); slots 12-15 are the gauges not on show. The owner picks
+ * what a slot shows from the list of all sixteen: the chosen gauge trades places with the one that
+ * was there, so nothing is ever lost or shown twice. Kept in data/gauges.json; a file that is not a
+ * full set of the known gauges is ignored.
  */
 const fs = require('fs');
 const path = require('path');
 
-const DEFAULT = ['rpm', 'boost', 'oil', 'coolant', 'iat', 'stft1', 'stft2', 'hpfp',
-    'timing', 'lambda', 'lpfp', 'oilp', 'boostTarget', 'load', 'torque', 'misfire'];
-const PER_PAGE = 8;
+const DEFAULT = ['rpm', 'boost', 'oil', 'coolant', 'iat', 'oilp',
+    'hpfp', 'timing', 'lambda', 'boostTarget', 'load', 'torque',
+    'stft1', 'stft2', 'lpfp', 'misfire'];
+const PER_PAGE = 6, PAGES = 2;
 
 class GaugeLayout {
     constructor(dataDir, log) {
@@ -42,6 +44,12 @@ class GaugeLayout {
         this.swap(slot, this.slots.indexOf(next));
         return next;
     }
+    /** The slot shows this gauge; the one it had goes to where that gauge was (a page or the spares). */
+    set(slot, id) {
+        const from = this.slots.indexOf(id);
+        if (from < 0 || !(slot >= 0 && slot < this.slots.length)) return false;
+        return from === slot ? true : this.swap(slot, from);
+    }
     reset() { this.slots = DEFAULT.slice(); this.save(); }
 }
-module.exports = { GaugeLayout, DEFAULT, PER_PAGE };
+module.exports = { GaugeLayout, DEFAULT, PER_PAGE, PAGES };

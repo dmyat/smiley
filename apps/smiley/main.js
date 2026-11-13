@@ -12,7 +12,7 @@ const {XDriveControl}=require('./xdrive');
 const {inspectNetwork,PhoneServer,wifiAddress}=require('./phone');
 const {infoRows}=require('./info');
 const {Perf}=require('./perf');
-const {GaugeLayout}=require('./layout');
+const {GaugeLayout,PER_PAGE}=require('./layout');
 const {FlashWorkspace}=require('./flash-workspace');
 
 mgu.run({async start(ctx){
@@ -104,7 +104,9 @@ mgu.run({async start(ctx){
         statsPage:()=>{statsPage=statsPage?0:1;repaint();},
         // Edit gauges: pick one, then tap another to swap them, or Change to bring in a different gauge.
         editStart:()=>{edit={picked:null};repaint();},
-        editTap:(slot)=>{if(!edit)return;if(edit.picked==null)edit.picked=slot;else if(edit.picked===slot)edit.picked=null;else{gauges.swap(edit.picked,slot);edit.picked=null;}repaint();},
+        // a tap on a gauge opens the list for it (again: closes it); a tap in the list puts that gauge there
+        editTap:(slot)=>{if(!edit)return;edit.picked=edit.picked===slot?null:slot;repaint();},
+        editSet:(id)=>{if(edit&&edit.picked!=null){gauges.set(edit.picked,id);edit.picked=null;repaint();}},
         editChange:()=>{if(edit&&edit.picked!=null){gauges.change(edit.picked,1);repaint();}},
         editReset:()=>{gauges.reset();if(edit)edit.picked=null;repaint();},
         editDone:()=>{edit=null;repaint();},
@@ -144,10 +146,10 @@ mgu.run({async start(ctx){
     // One frame. Only the page on screen is worked out: the other tabs cost nothing while hidden.
     function frame(){
         const demo=settings.get('demo')==='on';
-        const v={page,demo,theme:settings.get('theme'),custom:{a:settings.get('customA'),b:settings.get('customB'),bg:settings.get('customBg')},paused:session.paused,busy:session.busy||refreshPending,notice,version:ctx.spec.version,
+        const v={page,demo,theme:settings.get('theme'),surprises:settings.get('surprises'),custom:{a:settings.get('customA'),b:settings.get('customB'),bg:settings.get('customBg')},paused:session.paused,busy:session.busy||refreshPending,notice,version:ctx.spec.version,
             tempUnit:settings.get('tempUnit'),pressUnit:settings.get('pressUnit'),torqueUnit:settings.get('torqueUnit')};
         v.betaGate=betaEntry===page;
-        if(page===P.stats){v.stats=telemetry.snapshot(demo);v.statsPage=statsPage;v.gauges=gauges.page(statsPage);v.edit=edit;}
+        if(page===P.stats){v.stats=telemetry.snapshot(demo);v.statsPage=statsPage;v.gauges=gauges.page(statsPage);v.slots=gauges.slots;v.edit=edit;}
         else if(page===P.controls){
             v.tune=tune.view();v.bm3Verified=tune.verified;v.flap=controller.view();v.exhaustEnabled=settings.get('arm')==='on';v.flapNote=(auto.note()||{}).text;
             v.mapBlocked=demo||session.paused||session.busy||refreshPending||!link.available||tune.tuner==='off'||(tune.tuner==='bm3'&&!tune.verified);
@@ -186,7 +188,7 @@ mgu.run({async start(ctx){
                         holdTimer=null;
                         if(!down||page!==P.stats||edit)return;
                         const slot=UI.slotAt(down.x,down.y);if(slot<0)return;
-                        held=true;disp.ownDown=null;edit={picked:statsPage*8+slot};repaint();
+                        held=true;disp.ownDown=null;edit={picked:statsPage*PER_PAGE+slot};repaint();
                     },650);
                 }else if(phase===2){
                     if(down&&(Math.abs(x-down.x)>14||Math.abs(y-down.y)>14)){clearTimeout(holdTimer);holdTimer=null;}

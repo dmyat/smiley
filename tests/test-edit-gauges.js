@@ -1,6 +1,7 @@
 'use strict';
 // Press and hold a gauge on the real app (through the upstream head-unit stub): the editor opens with
-// that gauge picked, a tap on another swaps them, and a quick tap or a moving finger does not open it.
+// the pick list for that gauge, a tap in the list puts the chosen gauge there, and a quick tap or a
+// moving finger does not open it.
 const assert=require('assert'),path=require('path'),fs=require('fs'),os=require('os');
 const stage=path.join(__dirname,'../dist/smiley'),app=path.join(stage,'source/javascript');
 const {DiagLink}=require(path.join(app,'diaglink'));
@@ -24,12 +25,18 @@ setTimeout(async()=>{
   d._touch(1,100,150);await sleep(800);d._touch(3,100,150);await hu.loopFn();
   assert(targets().some((t)=>t.key==='slot0')&&targets().some((t)=>t.key==='editDone'),'holding a gauge opens the editor');
   if(out)fs.writeFileSync(out,last.png());
-  await tap('slot5');                                   // slot 0 was picked by the hold: tap slot 5 to swap
-  let s=slots();assert(s,'the layout is saved');assert.equal(s[0],'stft1');assert.equal(s[5],'rpm');
-  await tap('slot2');await tap('editChange');s=slots();assert.equal(s[2],'coolant','Change brings in the next gauge');assert.equal(new Set(s).size,16);
+  assert(targets().some((t)=>t.key==='pick-lpfp'),'the hold opens the pick list for that gauge');
+  assert(!targets().some((t)=>t.key==='slot2'||t.key==='slot5'),'the cards under the list cannot be tapped');
+  await tap('pick-lpfp');                               // slot 0 was picked by the hold: show a gauge that was off the pages
+  let s=slots();assert(s,'the layout is saved');assert.equal(s[0],'lpfp');assert.equal(s[14],'rpm','the old gauge takes the spare place');
+  assert(!targets().some((t)=>/^pick-/.test(t.key)),'choosing closes the list');
+  await tap('slot2');assert(targets().some((t)=>t.key==='pick-rpm'));                 // right-hand card: the list opens on the left
+  assert(!targets().some((t)=>t.key==='slot0'||t.key==='slot3'));
+  await tap('pick-boost');s=slots();assert.equal(s[2],'boost');assert.equal(s[1],'oil','a gauge already on the page trades places');assert.equal(new Set(s).size,16);
+  await tap('slot1');await tap('slot1');assert(!targets().some((t)=>/^pick-/.test(t.key)),'a second tap on the gauge closes the list');
   await tap('editDone');assert(!targets().some((t)=>/^slot/.test(t.key)),'Done closes the editor');
   await tap('editStart');assert(targets().some((t)=>t.key==='slot0'),'the Edit gauges button opens it too');
   await tap('editReset');assert.equal(slots()[0],'rpm');await tap('editDone');
-  console.log('PASS hold-to-edit: quick taps and drags ignored, hold opens the editor, swap, change, default layout and done');process.exit(0);
+  console.log('PASS hold-to-edit: quick taps and drags ignored, hold opens the pick list, choose from it, default layout and done');process.exit(0);
  }catch(e){console.error(e.stack);process.exit(1);}
 },700);

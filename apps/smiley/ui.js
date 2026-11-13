@@ -3,6 +3,12 @@ const G = require('./kit/gauges');
 const { withAlpha } = require('./kit/canvas');
 const QR = require('./qrcodegen');
 const W = 1600, H = 520;
+const { DEFAULT: GAUGE_IDS, PER_PAGE } = require('./layout');
+// Live Stats: three gauges across, two down. The names are what the pick list shows.
+const COLS = 3, TILE_W = 508, TILE_H = 186, PITCH_X = 522, PITCH_Y = 196;
+const GAUGE_NAMES = { rpm: 'RPM', boost: 'Boost', oil: 'Oil temp', coolant: 'Coolant', iat: 'Intake temp', stft1: 'Fuel trim 1', stft2: 'Fuel trim 2',
+    hpfp: 'High fuel press', timing: 'Timing', lambda: 'Lambda', lpfp: 'Low fuel press', oilp: 'Oil pressure', boostTarget: 'Boost target',
+    load: 'Engine load', torque: 'Torque', misfire: 'Misfires' };
 // Tabs switched off in this build. Their code stays in place; the tests turn them back on
 // with SMILEY_ALL_TABS=1. A hidden page has the index -1, which no tab or button can select.
 const HIDDEN = process.env.SMILEY_ALL_TABS === '1' ? [] : ['Phone', 'Connect', 'Flash'];
@@ -160,7 +166,83 @@ function draw(cv, v, act) {
     }
     if(v.notice) { cv.fillRect(24,475,1552,39,THEME.noticeBg); text(cv,v.notice.slice(0,135),44,501,19,THEME.warn); }
     else watermark(cv,v);
-    if(THEME.snow) drawSnow(cv,Date.now());
+    if(THEME.snow){
+        const now=Date.now(); drawSnow(cv,now);
+        // surprises stay off the pages whose bottom line carries a safety note, and out of the way of a message or the editor
+        if(v.surprises!=='off'&&!v.notice&&!v.edit&&v.page!==PAGE.xdrive&&v.page!==PAGE.faults) drawSurprise(cv,surpriseAt(now));
+    }
+}
+// Christmas surprises: now and then something festive crosses the screen for a few seconds - Santa's
+// sleigh behind two reindeer, a shooting star, or a snowman who pops up and waves. Like the snow it is
+// worked out from the clock alone: time is cut into 75 s slots, about three in five hold a surprise,
+// and the slot's number picks which one, when and where. It can be switched off in Settings.
+const SURPRISES={sleigh:7000,star:1800,snowman:5200};
+const SURPRISE_KINDS=['sleigh','sleigh','star','snowman','sleigh'];      // the sleigh comes round most often
+const SURPRISE_SLOT=75000;
+function surpriseAt(now){
+    const slot=Math.floor(now/SURPRISE_SLOT), r=(n)=>{const x=Math.sin(slot*12.9898+n*78.233)*43758.5453;return x-Math.floor(x);};
+    if(r(1)>0.6)return null;
+    const kind=SURPRISE_KINDS[Math.floor(r(3)*SURPRISE_KINDS.length)%SURPRISE_KINDS.length], dur=SURPRISES[kind];
+    const t=now-(slot*SURPRISE_SLOT+r(2)*(SURPRISE_SLOT-dur));
+    if(t<0||t>dur)return null;
+    return {kind,t,dur,p:t/dur,a:r(4),b:r(5)};
+}
+function drawSurprise(cv,s){
+    if(!s)return;
+    if(s.kind==='sleigh')drawSleigh(cv,-330+s.p*(W+400),120+s.a*200+Math.sin(s.p*Math.PI*2)*22,s.t);
+    else if(s.kind==='star')drawShootingStar(cv,s);
+    else drawSnowman(cv,180+s.a*(W-360),s);
+}
+const XMAS={red:'#c5282f',white:'#ffffff',skin:'#f3d2b8',brown:'#7a4a25',dark:'#4a2c14',gold:'#e6c877',coal:'#16181a',green:'#2f8f5a'};
+// one reindeer, facing right, with its feet at ground line y; step: the gallop (ms)
+function drawReindeer(cv,x,y,step,red){
+    const c=XMAS, sw=Math.sin(step/90)*7;
+    [[6,sw],[12,-sw],[30,-sw],[36,sw]].forEach((q)=>cv.line(x+q[0],y-16,x+q[0]+q[1],y,3,c.dark));
+    cv.roundRect(x,y-30,42,16,8,c.brown);                                  // body
+    cv.circle(x-1,y-25,3.5,c.white);                                       // tail
+    cv.line(x+38,y-26,x+48,y-38,6,c.brown);                                // neck
+    cv.circle(x+50,y-41,7,c.brown); cv.circle(x+56,y-39,4.5,c.brown);     // head and muzzle
+    cv.circle(x+59,y-40,red?3.2:2,red?'#ff3b47':c.coal);                   // nose
+    cv.circle(x+51,y-43,1.3,c.coal);
+    cv.line(x+47,y-47,x+43,y-58,2,c.dark); cv.line(x+45,y-53,x+39,y-55,2,c.dark);      // antlers
+    cv.line(x+51,y-47,x+54,y-59,2,c.dark); cv.line(x+53,y-54,x+59,y-57,2,c.dark);
+}
+// the sleigh at x (its back), ground line y, flying right
+function drawSleigh(cv,x,y,step){
+    const c=XMAS, bob=Math.sin(step/260)*3;
+    for(let k=0;k<7;k++){const q=((step/180+k*1.7)%7);cv.circle(x-10-q*13,y-22+Math.sin(k*2.1)*12+q,Math.max(0.6,3-q*0.38),k%2?c.white:c.gold);}   // sparkles behind
+    cv.line(x+78,y-24+bob,x+116,y-28,1.6,c.gold); cv.line(x+116,y-28,x+186,y-28,1.6,c.gold);     // reins
+    drawReindeer(cv,x+110,y,step,false); drawReindeer(cv,x+178,y,step+140,true);
+    const sy=y+bob;
+    cv.circle(x+14,sy-34,15,c.brown); cv.circle(x+10,sy-44,4,c.dark);       // the sack
+    cv.circle(x+44,sy-36,13,c.red);                                         // Santa
+    cv.fillRect(x+33,sy-33,22,4,c.coal); cv.fillRect(x+41,sy-34,6,6,c.gold);
+    cv.circle(x+47,sy-55,8,c.skin); cv.circle(x+49,sy-50,7,c.white);       // face and beard
+    cv.circle(x+52,sy-56,1.2,c.coal);
+    cv.roundRect(x+37,sy-68,20,10,5,c.red); cv.fillRect(x+37,sy-61,21,4,c.white); cv.circle(x+36,sy-66,4,c.white);   // hat
+    cv.line(x+52,sy-38,x+78,sy-24,5,c.red); cv.circle(x+79,sy-24,3.5,c.coal);                     // arm on the reins
+    cv.roundRect(x,sy-28,84,24,9,c.red); cv.fillRect(x+4,sy-28,76,4,c.gold);                      // the sleigh
+    cv.line(x+12,sy-4,x+12,sy+4,3,c.gold); cv.line(x+66,sy-4,x+66,sy+4,3,c.gold);
+    cv.line(x-8,sy+5,x+86,sy+5,3.5,c.gold); cv.arc(x+86,sy-4,7.5,10.5,-90,90,c.gold);             // runner with its curl
+}
+function drawShootingStar(cv,s){
+    const c=XMAS, x=60+s.a*(W*0.45)+s.p*620, y=70+s.b*90+s.p*190, fade=Math.sin(s.p*Math.PI);
+    for(let k=1;k<=9;k++)cv.circle(x-k*17,y-k*5.2,Math.max(0.5,(4.6-k*0.45)*fade),k%2?c.gold:c.white);
+    for(let k=0;k<4;k++){const a=k*Math.PI/4, r=11*fade;cv.line(x-Math.cos(a)*r,y-Math.sin(a)*r,x+Math.cos(a)*r,y+Math.sin(a)*r,2.5,c.gold);}
+    cv.circle(x,y,5*fade,c.white);
+}
+function drawSnowman(cv,x,s){
+    const c=XMAS, up=Math.min(1,s.t/500,(s.dur-s.t)/500), y=H+78-up*150, wave=Math.sin(s.t/170)*10;
+    cv.circle(x,y+34,34,c.white); cv.circle(x,y-10,24,c.white);            // body
+    cv.line(x-22,y-4,x-52,y-18,3.5,c.dark); cv.line(x+22,y-6,x+50,y-30+wave,3.5,c.dark);          // arms, the right one waving
+    cv.line(x+50,y-30+wave,x+58,y-40+wave,2.5,c.dark); cv.line(x+50,y-30+wave,x+60,y-30+wave,2.5,c.dark);
+    cv.circle(x,y-46,17,c.white);                                           // head
+    cv.fillRect(x-20,y-62,40,5,c.coal); cv.fillRect(x-12,y-84,24,23,c.coal); cv.fillRect(x-12,y-68,24,5,c.red);   // hat
+    cv.circle(x-6,y-50,2.2,c.coal); cv.circle(x+6,y-50,2.2,c.coal);
+    cv.line(x,y-45,x+15,y-42,4,'#f08a2c');                                  // carrot nose
+    for(let k=0;k<5;k++)cv.circle(x-8+k*4,y-37+Math.abs(k-2)*-1.5+3,1.3,c.coal);                  // smile
+    cv.roundRect(x-20,y-31,40,8,4,c.red); cv.roundRect(x+8,y-28,8,20,4,c.red);                    // scarf
+    [0,14,28].forEach((d)=>cv.circle(x,y-8+d,2.6,c.coal));                  // buttons
 }
 // Snowfall for the Christmas theme: a fixed set of small flakes, each with its own place, speed, size
 // and sway, positioned from the clock alone (nothing to store, the same cost every frame). They are
@@ -263,28 +345,31 @@ function stats(cv,v,a) {
         boostTarget:['BOOST TARGET',press(d.boostTarget),pU,R.boost[0],R.boost[1],1,'boostTarget',press], load:['ENGINE LOAD',d.load,'%',R.load[0],R.load[1],0,'load',(n)=>n],
         torque:['TORQUE',tq(d.torque),lbft?'lb-ft':'Nm',R.torque[0],R.torque[1],0,'torque',tq], misfire:null,
     };
-    const ids=v.gauges, items=ids.map((id)=>DEF[id]), pk=d.peaks||{}, base=(v.statsPage?1:0)*8, ed=v.edit;
-    // The eight cards and their names change only when the layout does: drawn once into a layer the
+    const ids=v.gauges, items=ids.map((id)=>DEF[id]), pk=d.peaks||{}, base=(v.statsPage?1:0)*PER_PAGE, ed=v.edit;
+    // the pick list covers one column: the right one, or the left when the picked gauge is on the right
+    const onPage=ed&&ed.picked!=null&&ed.picked>=base&&ed.picked<base+PER_PAGE, listCol=ed&&ed.picked!=null?(onPage&&(ed.picked-base)%COLS===COLS-1?0:COLS-1):-1;
+    // The six cards and their names change only when the layout does: drawn once into a layer the
     // renderer keeps, so each frame sends only the needles and numbers.
     cv.blit(G.layer('smiley-tiles|'+THEME.id+'|'+ids.join(','),1552,382,(c)=>items.forEach((q,i)=>{
-        const x=(i%4)*390, y=Math.floor(i/4)*196;
-        card(c,x,y,376,186,14);
-        text(c,q?q[0]:'MISFIRES',x+188,y+164,18,THEME.accent2,{font:'bold',align:'center'});
+        const x=(i%COLS)*PITCH_X, y=Math.floor(i/COLS)*PITCH_Y;
+        card(c,x,y,TILE_W,TILE_H,14);
+        text(c,q?q[0]:'MISFIRES',x+TILE_W/2,y+164,18,THEME.accent2,{font:'bold',align:'center'});
     }),cv.textScale),24,58);
     items.forEach((q,i)=>{
-        const x=24+(i%4)*390, y=58+Math.floor(i/4)*196;
+        const x=24+(i%COLS)*PITCH_X, y=58+Math.floor(i/COLS)*PITCH_Y;
+        if(i%COLS===listCol)return;                      // under the pick list
         if(ed){
             // editing: every card is a button; the picked one wears a gold frame
-            if(ed.picked===base+i){cv.strokeRoundRect(x-2,y-2,380,190,15,4,THEME.accent);}
-            if(cv.target)cv.target(x,y,376,186,()=>a.editTap(base+i),'slot'+i);
+            if(ed.picked===base+i){cv.strokeRoundRect(x-2,y-2,TILE_W+4,TILE_H+4,15,4,THEME.accent);}
+            if(cv.target)cv.target(x,y,TILE_W,TILE_H,()=>a.editTap(base+i),'slot'+i);
         }
-        if(!q){misfires(cv,d,x,y);return;}
-        G.radial(cv,THEME,x+188,y+76,64,{value:q[1],unit:q[2],min:q[3],max:q[4],decimals:q[5],ticks:10,tickColor:'#ffffff',tickLong:10,tickShort:6});
-        if(q[1]==null)text(cv,q[6]==='stft2'?'IF FITTED':'NO DATA',x+360,y+24,12,THEME.dim,{align:'right'});
+        if(!q){misfires(cv,d,x,y,TILE_W);return;}
+        G.radial(cv,THEME,x+TILE_W/2,y+76,64,{value:q[1],unit:q[2],min:q[3],max:q[4],decimals:q[5],ticks:10,tickColor:'#ffffff',tickLong:10,tickShort:6});
+        if(q[1]==null)text(cv,q[6]==='stft2'?'IF FITTED':'NO DATA',x+TILE_W-16,y+24,12,THEME.dim,{align:'right'});
     });
+    if(listCol>=0)pickList(cv,v,a,24+listCol*PITCH_X,58);
     if(ed){
-        text(cv,ed.picked==null?'Tap a gauge to pick it':'Tap another gauge to swap, or change this one',44,490,18,THEME.accent2);
-        button(cv,620,456,220,'Change',a.editChange,'editChange',false,ed.picked==null);
+        text(cv,ed.picked==null?'Tap a gauge to change what it shows':'Pick from the list what this gauge shows',44,490,18,THEME.accent2);
         button(cv,852,456,220,v.statsPage?'Page 1':'Page 2',a.statsPage,'statsPage',false,false);
         button(cv,1084,456,240,'Default layout',a.editReset,'editReset',false,false);
         button(cv,1336,456,240,'Done',a.editDone,'editDone',true,false);
@@ -294,17 +379,35 @@ function stats(cv,v,a) {
     button(cv,994,456,285,'Edit gauges',a.editStart,'editStart',false,false);
     button(cv,1291,456,285,v.statsPage?'Main gauges':'More gauges',a.statsPage,'statsPage',false,false);
 }
-/** Which gauge card (0-7) is at a point of the Live Stats page, or -1. */
+/** Which gauge card (0-5) is at a point of the Live Stats page, or -1. */
 function slotAt(x,y) {
-    const col=Math.floor((x-24)/390), row=Math.floor((y-58)/196);
-    if(col<0||col>3||row<0||row>1||x-24-col*390>376||y-58-row*196>186)return -1;
-    return row*4+col;
+    const col=Math.floor((x-24)/PITCH_X), row=Math.floor((y-58)/PITCH_Y);
+    if(col<0||col>=COLS||row<0||row>1||x-24-col*PITCH_X>TILE_W||y-58-row*PITCH_Y>TILE_H)return -1;
+    return row*COLS+col;
 }
-function misfires(cv,d,x,y) {
+/**
+ * The drop-down of the gauge editor: all sixteen gauges, two columns of eight, over one column of
+ * cards. The one in the picked slot is filled; each other says where it is now (page 1, page 2, or
+ * not on show). A tap puts that gauge in the picked slot.
+ */
+function pickList(cv,v,a,x,y) {
+    const h=2*PITCH_Y-10, slots=v.slots||[], picked=v.edit.picked;
+    cv.roundRect(x,y,TILE_W,h,14,THEME.panelTop); cv.strokeRoundRect(x,y,TILE_W,h,14,2,THEME.accent);
+    text(cv,'SHOW IN THIS PLACE',x+18,y+30,17,THEME.accent2,{font:'bold',spacing:1});
+    GAUGE_IDS.forEach((id,i)=>{
+        const bx=x+12+Math.floor(i/8)*244, by=y+46+(i%8)*41, bw=240, bh=36, at=slots.indexOf(id), here=at===picked;
+        cv.roundRect(bx,by,bw,bh,8,here?THEME.accent:THEME.card);
+        if(!here)cv.strokeRoundRect(bx,by,bw,bh,8,1,withAlpha(THEME.accent,0.3));
+        text(cv,GAUGE_NAMES[id]||id,bx+12,by+24,18,here?THEME.ink:THEME.text,{font:here?'bold':'label'});
+        text(cv,here?'HERE':at<PER_PAGE?'PAGE 1':at<2*PER_PAGE?'PAGE 2':'OFF',bx+bw-10,by+23,12,here?THEME.ink:at<2*PER_PAGE?THEME.dim:THEME.off,{align:'right',font:'bold',spacing:1});
+        if(cv.target)cv.target(bx,by,bw,bh,()=>a.editSet(id),'pick-'+id);
+    });
+}
+function misfires(cv,d,x,y,w) {
     const m=d.misfires;
-    text(cv,d.misfire==null?'--':String(d.misfire),x+188,y+92,64,d.misfire?THEME.crit:d.misfire===0?THEME.ok:THEME.dim,{font:'num',align:'center'});
-    text(cv,m&&m.length?m.map((n,i)=>(i+1)+':'+(n==null?'-':n)).join('  '):'this drive',x+188,y+128,16,THEME.dim,{align:'center'});
-    if(d.misfire==null)text(cv,'NO DATA',x+360,y+24,12,THEME.dim,{align:'right'});
+    text(cv,d.misfire==null?'--':String(d.misfire),x+w/2,y+92,64,d.misfire?THEME.crit:d.misfire===0?THEME.ok:THEME.dim,{font:'num',align:'center'});
+    text(cv,m&&m.length?m.map((n,i)=>(i+1)+':'+(n==null?'-':n)).join('  '):'this drive',x+w/2,y+128,16,THEME.dim,{align:'center'});
+    if(d.misfire==null)text(cv,'NO DATA',x+w-16,y+24,12,THEME.dim,{align:'right'});
 }
 function maps(cv,v,a) {
     heading(cv,'TUNE','Pick the tune your car already has.','tune');
@@ -428,7 +531,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.6 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.7 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
@@ -592,4 +695,4 @@ function brakePage(cv,p) {
     });
     text(cv,r?'Peak '+r.peakG.toFixed(2)+' g':'',620,438,20,THEME.dim);
 }
-module.exports={draw,W,H,TABS,THEME,PAGE,slotAt,setTheme,PALETTES};
+module.exports={draw,W,H,TABS,THEME,PAGE,slotAt,setTheme,PALETTES,surpriseAt,SURPRISES};
