@@ -6,9 +6,9 @@
 
 **Your BMW's engine, tune, faults and performance timers, on the car's own screen.**
 
-An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.5 &nbsp;·&nbsp; by David Myat
+An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.6 &nbsp;·&nbsp; by David Myat
 
-[Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#eight-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
+[Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#nine-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
 
 <img src="docs/screenshots/live-stats.png" alt="Live Stats: eight round engine gauges on a black and gold screen">
 
@@ -20,7 +20,7 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.1.5 &nbsp;·&nb
 
 ## The tour
 
-Six tabs across the top of the screen in version 0.1.5: Live Stats, AWD / 2WD,
+Six tabs across the top of the screen in version 0.1.6: Live Stats, AWD / 2WD,
 Perf, Tune, Faults and Info. **Phone, Connect and Flash are switched off for
 now**; their sections below describe what they do when they return. The
 screenshots come from the simulation, with demo data.
@@ -143,16 +143,18 @@ the app version. Read once when SMILEY starts.
 </tr>
 </table>
 
-## Eight looks
+## Nine looks
 
-Pick one under Settings → Theme. Seven are ready-made; the eighth is yours.
+Pick one under Settings → Theme. Eight are ready-made; the ninth is yours.
+**Christmas** adds gently falling snow over every page.
 
 <img src="docs/screenshots/themes.png" alt="The eight themes side by side on the Live Stats page">
 
 | | | | |
 |---|---|---|---|
 | Noir & Champagne | Burgundy & Gold | Amethyst & Gold | Midnight & Gold |
-| Racing Green | Motorsport | Spider Red & Blue | **Custom** |
+| Racing Green | Motorsport | Spider Red & Blue | Christmas (snow) |
+| **Custom** | | | |
 
 **Custom** builds a theme from three choices in Settings: a main colour, a
 second colour and a background. Twelve colours and four backgrounds give 576

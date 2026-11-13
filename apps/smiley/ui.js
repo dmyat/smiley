@@ -70,6 +70,12 @@ function customPalette(c) {
         text: '#f5f2ee', dim: mix(BG, '#ffffff', 0.60), track: mix(BG, A, 0.17), tick: mix(BG, '#ffffff', 0.42), a: A, b: mix(B, '#ffffff', 0.25), cold: mix(B, '#ffffff', 0.25),
         ramp: [mix(A, BG, 0.5), A, B], hot: [B, mix(A, B, 0.5), mix(A, '#ffffff', 0.25), A], ink: bright ? '#12100c' : '#f5f2ee', off: mix(BG, '#ffffff', 0.36), notice: mix(BG, '#e3ad55', 0.16) });
 }
+// Christmas: a night-green background, holly red and gold, with snow falling over every page.
+// snow: true is what turns the snowfall on (drawSnow, called at the end of draw()).
+PALETTES.xmas = Object.assign(look('CHRISTMAS', { bg: '#07130f', bg2: '#0a1a14', panel: '#11261d', card: '#0d1f18', edge: '#27503c',
+    text: '#f4f7f2', dim: '#9db3a6', track: '#1b3529', tick: '#6f8f7e', a: '#d8434a', b: '#e6c877', cold: '#bcd9ee',
+    ramp: ['#2f8f5a', '#e6c877', '#d8434a'], hot: ['#e6c877', '#eda35a', '#e2675c', '#ff3b47'],
+    ink: '#1a0709', off: '#587264', notice: '#2a1418' }), { snow: true });
 PALETTES.custom = customPalette(null);
 // the car's own header and frame are drawn by the kit from its theme table: give it the same colours
 try { const KT = require('./kit/themes'); Object.keys(PALETTES).forEach((id) => { KT.THEMES[id] = PALETTES[id]; }); } catch (e) { /* previews without the kit */ }
@@ -154,6 +160,20 @@ function draw(cv, v, act) {
     }
     if(v.notice) { cv.fillRect(24,475,1552,39,THEME.noticeBg); text(cv,v.notice.slice(0,135),44,501,19,THEME.warn); }
     else watermark(cv,v);
+    if(THEME.snow) drawSnow(cv,Date.now());
+}
+// Snowfall for the Christmas theme: a fixed set of small flakes, each with its own place, speed, size
+// and sway, positioned from the clock alone (nothing to store, the same cost every frame). They are
+// kept small and few so the readings under them stay easy to read.
+const FLAKES=[];
+for(let i=0;i<34;i++){const r=(n)=>{const x=Math.sin((i+1)*12.9898+n*78.233)*43758.5453;return x-Math.floor(x);};
+    FLAKES.push({x:r(1)*W,y:r(2)*H,speed:16+r(3)*30,size:1.2+r(4)*2.2,sway:6+r(5)*14,phase:r(6)*6.283,far:r(7)<0.45});}
+function drawSnow(cv,now){
+    const t=now/1000;
+    for(const f of FLAKES){
+        const y=(f.y+t*f.speed)%(H+8)-4, x=(f.x+Math.sin(t*0.6+f.phase)*f.sway+W)%W;
+        cv.circle(x,y,f.size,f.far?'#8fa3b3':'#eef4f8');
+    }
 }
 // Uses the current palette, fonts, card and button helpers, just like the original pages.
 function clipped(cv,s,x,y,size,color,width,opts) {
@@ -408,7 +428,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.5 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.6 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
