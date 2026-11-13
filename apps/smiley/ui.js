@@ -611,7 +611,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.23 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.1.24 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
@@ -621,14 +621,59 @@ function watermark(cv,v) {
     cv.text(by,24+w+20,y,size,W,{font:'label'});
 }
 function perf(cv,v,a) {
-    const p=v.perf, names={drag:'Drag timer',g:'G-meter',dyno:'Dyno',brake:'Brake test'};
+    const p=v.perf, names={drag:'Drag timer',g:'G-meter',dyno:'Dyno',brake:'Brake test',history:'History'};
     titled(cv,'PERFORMANCE','perf');
     text(cv,p.demo?'Demo drive - results are not saved':'Works while the app is open. Closed roads only.',44,130,19,p.demo?THEME.warn:THEME.dim);
-    Object.keys(names).forEach((k,i)=>button(cv,760+i*202,73,192,names[k],()=>a.perfMode(k),'perf'+k,p.mode===k,false));
+    Object.keys(names).forEach((k,i)=>button(cv,716+i*168,73,160,names[k],()=>a.perfMode(k),'perf'+k,p.mode===k,false));
     if(p.mode==='drag')dragPage(cv,p);
     if(p.mode==='g')gPage(cv,p,a);
     if(p.mode==='dyno')dynoPage(cv,p,v);
     if(p.mode==='brake')brakePage(cv,p);
+    if(p.mode==='history')historyPage(cv,p,v,a);
+}
+/*
+ * History: every drag run, dyno pull and stop of the last 30 days, newest first. Each entry is
+ * deleted by itself when it turns 30 days old. Shown in the units the run was made in.
+ */
+const MONTHS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const SPLIT_NAMES={'0-60mph':'0-60 mph','60-130mph':'60-130 mph','0-100':'0-100 km/h','100-200':'100-200 km/h',qm:'1/4 mile','100-0mph':'100-0 mph','60-0mph':'60-0 mph','200-0':'200-0 km/h','100-0':'100-0 km/h'};
+function ago(ms) {
+    const m=Math.floor(ms/60000);
+    if(!(m>=1))return 'just now';
+    if(m<60)return m+' min ago';
+    if(m<1440)return Math.floor(m/60)+' h ago';
+    const d=Math.floor(m/1440);return d===1?'1 day ago':d+' days ago';
+}
+function historyLine(e,v) {
+    const mph=e.unit!=='kmh', sep='   ·   ';
+    if(e.kind==='dyno'){
+        const lbft=v.torqueUnit==='lbft';
+        return (e.peakP/745.7).toFixed(0)+' hp at '+e.peakPrpm+' rpm'+sep+(lbft?e.peakT*0.73756:e.peakT).toFixed(0)+(lbft?' lb-ft':' Nm')+' at '+e.peakTrpm+' rpm';
+    }
+    const keys=Object.keys(e.result||{});
+    if(e.kind==='brake')return keys.map((k)=>{const r=e.result[k];return (SPLIT_NAMES[k]||k)+'  '+(mph?r.m*3.28084:r.m).toFixed(1)+(mph?' ft':' m')+' in '+r.s.toFixed(2)+' s';}).join(sep)+(e.peakG?sep+e.peakG.toFixed(2)+' g':'');
+    return keys.map((k)=>{
+        const trap=k==='qm'&&e.trap&&e.trap[k]!=null?' at '+(mph?e.trap[k]/1.609344:e.trap[k]).toFixed(0)+(mph?' mph':' km/h'):'';
+        return (SPLIT_NAMES[k]||k)+'  '+e.result[k].toFixed(2)+' s'+trap;
+    }).join(sep)+(e.rollout?sep+'rollout':'');
+}
+function historyPage(cv,p,v,a) {
+    const h=p.history, kinds={drag:['DRAG',THEME.accent],dyno:['DYNO',THEME.cold],brake:['BRAKE',THEME.accent2]};
+    card(cv,44,160,1512,300,16);
+    text(cv,'WHEN',74,194,15,THEME.dim,{font:'bold',spacing:1});text(cv,'TEST',340,194,15,THEME.dim,{font:'bold',spacing:1});text(cv,'RESULT',470,194,15,THEME.dim,{font:'bold',spacing:1});
+    if(!h.count)text(cv,'Nothing yet. Every drag run, dyno pull and brake test is listed here.',800,300,24,THEME.dim,{align:'center'});
+    h.rows.forEach((e,i)=>{
+        const y=232+i*33, d=new Date(e.at), k=kinds[e.kind]||[String(e.kind).toUpperCase(),THEME.dim];
+        cv.fillRect(74,y-25,1452,1,THEME.panelEdge);
+        text(cv,MONTHS[d.getMonth()]+' '+d.getDate(),74,y,20,THEME.text);text(cv,ago(h.now-e.at),160,y,17,THEME.dim);
+        text(cv,k[0],340,y,17,k[1],{font:'bold',spacing:1});
+        text(cv,historyLine(e,v).slice(0,96),470,y,20,THEME.text);
+    });
+    text(cv,'Kept for '+h.days+' days, then deleted automatically.'+(h.count?'   '+h.count+' saved   ·   page '+(h.page+1)+' of '+h.pages:''),74,440,16,THEME.dim);
+    if(h.pages>1){
+        button(cv,1206,404,160,'Newer',()=>a.perfHist(-1),'histNewer',false,h.page===0);
+        button(cv,1376,404,160,'Older',()=>a.perfHist(1),'histOlder',false,h.page>=h.pages-1);
+    }
 }
 function speedBox(cv,p,x,y) {
     text(cv,p.speed==null?'--':p.speed.toFixed(0),x,y,56,THEME.text,{font:'num'});

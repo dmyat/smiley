@@ -13,6 +13,9 @@
  * All four listen all the time, whichever is on screen: a launch, a pull or a stop is caught
  * when it happens. Everything here only reads. Results are kept in data/perf.json; demo runs are
  * shown and never saved.
+ *
+ *   history  every drag run, dyno pull and stop, newest first, in data/perf-history.json. An entry
+ *            is deleted by itself once it is 30 days old.
  */
 const fs = require('fs');
 const path = require('path');
@@ -20,7 +23,11 @@ const { RunTimer } = require('./kit/run_timer');
 
 const MPH = 1.609344, G0 = 9.80665;
 const isNum = (x) => typeof x === 'number' && isFinite(x);
-const MODES = ['drag', 'g', 'dyno', 'brake'];
+const MODES = ['drag', 'g', 'dyno', 'brake', 'history'];
+const KEEP_DAYS = 30, KEEP_MS = KEEP_DAYS * 86400000;   // the history keeps a month
+const HIST_MAX = 600;                                    // and never more than this many, so the file stays small
+const HIST_ROWS = 6;                                     // rows on one history page
+const CLOCK_OK = Date.UTC(2024, 0, 1);                   // a head unit that has not got the time yet deletes nothing
 
 const DRAG_SPLITS = {
     kmh: [{ key: '0-100', label: '0-100 km/h', from: 0, to: 100 }, { key: '100-200', label: '100-200 km/h', from: 100, to: 200 }],
@@ -49,6 +56,10 @@ class Perf {
             ['drag', 'brake', 'dyno'].forEach((k) => { if (s && s[k] && Array.isArray(s[k].runs)) this.saved[k] = Object.assign(this.saved[k], s[k]); });
         } catch (e) { /* first start */ }
         this.demoStore = { drag: { best: {}, runs: [] }, brake: { best: {}, runs: [] }, dyno: { runs: [] } };
+        this.histFile = path.join(dataDir, 'perf-history.json');
+        this.hist = []; this.demoHist = []; this.histPage = 0; this.pruneAt = 0;
+        this.now = () => Date.now();
+        try { const h = JSON.parse(fs.readFileSync(this.histFile, 'utf8')); if (Array.isArray(h)) this.hist = h.filter((e) => e && isNum(e.at) && typeof e.kind === 'string'); } catch (e) { /* first start */ }
         this.demo = false; this.mode = 'drag';
         this.resetG();
         this.newTimer();
@@ -58,6 +69,24 @@ class Perf {
     }
     store() { return this.demo ? this.demoStore : this.saved; }
     save() { if (this.demo) return; try { const tmp = this.file + '.tmp'; fs.writeFileSync(tmp, JSON.stringify(this.saved)); fs.renameSync(tmp, this.file); } catch (e) { this.log.warn('perf save: ' + e); } }
+    /* ---------------- history ---------------- */
+    saveHist() { if (this.demo) return; try { const tmp = this.histFile + '.tmp'; fs.writeFileSync(tmp, JSON.stringify(this.hist)); fs.renameSync(tmp, this.histFile); } catch (e) { this.log.warn('history save: ' + e); } }
+    /** Entries older than 30 days go, in the saved list and the demo one. True when the saved list changed. */
+    prune(now) {
+        if (!(now > CLOCK_OK)) return false;
+        const n = this.hist.length, keep = (e) => now - e.at < KEEP_MS;
+        this.hist = this.hist.filter(keep).slice(0, HIST_MAX); this.demoHist = this.demoHist.filter(keep).slice(0, HIST_MAX);
+        return this.hist.length !== n;
+    }
+    /** One finished run, pull or stop goes on top of the history. */
+    record(entry) {
+        const now = this.now(), list = this.demo ? this.demoHist : this.hist;
+        list.unshift(Object.assign({ at: now }, entry));
+        if (this.demo) this.demoHist = this.demoHist.slice(0, HIST_MAX);
+        this.prune(now); this.histPage = 0;
+        this.saveHist();
+    }
+    histTurn(d) { const pages = Math.max(1, Math.ceil((this.demo ? this.demoHist : this.hist).length / HIST_ROWS)); this.histPage = Math.max(0, Math.min(pages - 1, this.histPage + d)); }
     unit() { return this.get('speedUnit') === 'kmh' ? 'kmh' : 'mph'; }
     setMode(m) { if (MODES.indexOf(m) >= 0) this.mode = m; }
     nextMode() { this.mode = MODES[(MODES.indexOf(this.mode) + 1) % MODES.length]; }
@@ -85,12 +114,18 @@ class Perf {
                 });
                 st.runs.unshift(Object.assign({ unit: this.unit(), peakG: this.peakLaunchG }, run)); st.runs = st.runs.slice(0, 30);
                 this.save();
+                this.record({ kind: 'drag', unit: this.unit(), rollout: !!run.rollout, result: run.result, trap: run.trap, peakG: this.peakLaunchG });
                 this.log.info('drag run ' + JSON.stringify(run.result));
             },
         });
     }
     /** Call a few times a second: a stopped car sends no new speed, so the timer arms by the clock. */
-    idle(now) { this.fadeEnv(now); if (!this.demo) this.timer.idle(now); }
+    idle(now) {
+        this.fadeEnv(now); if (!this.demo) this.timer.idle(now);
+        // the month-old entries are cleared at start and then every ten minutes, without a run being needed
+        const real = this.now();
+        if (real - this.pruneAt > 600000 || real < this.pruneAt) { this.pruneAt = real; if (this.prune(real)) this.saveHist(); }
+    }
 
     /* ---------------- g meter ---------------- */
     resetG() { this.trail = []; this.gPeak = { accel: 0, brake: 0, left: 0, right: 0, total: 0 }; this.gT = 0; this.env = new Array(SECTORS).fill(0); this.envAt = new Array(SECTORS).fill(0); this.envT = null; }
@@ -158,6 +193,7 @@ class Perf {
         const st = this.store().dyno;
         st.runs.unshift(run); st.runs = st.runs.slice(0, 10);
         this.save();
+        this.record({ kind: 'dyno', peakP: run.peakP, peakPrpm: run.peakPrpm, peakT: run.peakT, peakTrpm: run.peakTrpm });
         y.last = run; y.state = 'done'; y.until = Date.now() + 6000;
         this.log.info('dyno run ' + Math.round(run.peakP / 745.7) + ' hp @' + run.peakPrpm + ', ' + Math.round(run.peakT) + ' Nm @' + run.peakTrpm);
     }
@@ -201,6 +237,7 @@ class Perf {
         Object.keys(res).forEach((k) => { const best = st.best[k]; if (!best || res[k].m < best.m) { st.best[k] = { m: res[k].m, s: res[k].s, at: r.at }; r.newBest[k] = true; } });
         st.runs.unshift(r); st.runs = st.runs.slice(0, 30);
         this.save();
+        if (Object.keys(res).length) this.record({ kind: 'brake', unit: r.unit, result: res, peakG: r.peakG });
         b.last = r; b.run = null; b.state = 'done';
         this.log.info('stop ' + JSON.stringify(res));
     }
@@ -258,7 +295,10 @@ class Perf {
         if (y.until && now > y.until && y.state !== 'pull') { y.state = 'idle'; y.until = 0; }
         if (b.msg && now > b.msgUntil) b.msg = null;
         const ro = this.timer.rollout ? '@ro' : '';
+        const list = this.demo ? this.demoHist : this.hist, pages = Math.max(1, Math.ceil(list.length / HIST_ROWS));
+        this.histPage = Math.min(this.histPage, pages - 1);
         return {
+            history: { rows: list.slice(this.histPage * HIST_ROWS, (this.histPage + 1) * HIST_ROWS), page: this.histPage, pages, count: list.length, days: KEEP_DAYS, now: this.now() },
             mode: this.mode, demo: !!d.demo, mph, speed: isNum(d.speed) ? (mph ? d.speed / MPH : d.speed) : null, speedUnit: mph ? 'mph' : 'km/h',
             rpm: d.rpm, gLong: d.gLong, gLat: d.gLat, haveG: isNum(d.gLong),
             drag: { state: this.timer.state, elapsed: this.timer.elapsed(now), rollout: this.timer.rollout, peakG: this.peakLaunchG,
@@ -272,4 +312,4 @@ class Perf {
         };
     }
 }
-module.exports = { Perf, MODES, MPH };
+module.exports = { Perf, MODES, MPH, KEEP_DAYS, HIST_ROWS };

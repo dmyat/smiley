@@ -121,6 +121,7 @@ mgu.run({async start(ctx){
         resetPeaks:()=>{telemetry.resetPeaks();repaint();},
         perfMode:(m)=>{perf.setMode(m);repaint();},
         resetG:()=>{perf.resetG();repaint();},
+        perfHist:(d)=>{perf.histTurn(d);repaint();},
         network:()=>{network=inspectNetwork();repaint();},
         pause:action(async()=>{
             if(flash.connected)throw new Error('Disconnect in Connect before resuming diagnostics');

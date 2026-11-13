@@ -297,6 +297,24 @@ async function run(){
   const p=new Perf(null,perfSettings(),fs.mkdtempSync(path.join(tmp,'perf-')),quiet);p.sample({speed:50,gLong:0.5,gLat:-0.8},0);p.sample({speed:50,gLong:-1.1,gLat:0.3},200);
   assert.deepStrictEqual([p.gPeak.accel,p.gPeak.brake,p.gPeak.left,p.gPeak.right],[0.5,1.1,0.8,0.3]);assert.equal(p.env.length,24);p.sample({speed:50,gLong:0.9,gLat:0},400);assert.equal(p.env[0],0.9,'straight ahead');p.sample({speed:50,gLong:0,gLat:0.7},600);assert.equal(p.env[6],0.7,'to the right');p.sample({speed:50,gLong:-1.2,gLat:0},800);assert.equal(p.env[12],1.2,'braking');p.sample({speed:50,gLong:0.4,gLat:0},1000);assert.equal(p.env[0],0.9,'held while the dot was just there');p.sample({speed:50,gLong:0.05,gLat:0},1800);assert.equal(p.env[0],0.9,'still held inside 1.5 s');for(let t=2200;t<=9000;t+=100)p.sample({speed:50,gLong:0.05,gLat:0},t);assert(p.env[0]<0.1&&p.env[0]>=0.05,'the outline shrank back to the dot: '+p.env[0]);assert(p.env[12]<0.05&&p.env[6]<0.05,'every direction let go');assert.equal(p.gPeak.accel,0.9,'the max numbers stay');assert.equal(p.gPeak.brake,1.2);p.sample({speed:50,gLong:0.8,gLat:0},9100);assert.equal(p.env[0],0.8,'and it follows the dot out again');p.resetG();assert.equal(p.gPeak.total,0);assert(p.env.every((e)=>e===0));
  });
+ await test('History lists every run, pull and stop, and deletes each one once it is 30 days old',async()=>{
+  const dir=fs.mkdtempSync(path.join(tmp,'perf-')),DAY=86400000,T0=Date.UTC(2026,10,1);let clock=T0;
+  const mk=()=>{const p=new Perf(null,perfSettings(),dir,quiet);p.now=()=>clock;return p;};
+  const p=mk();let t=0;
+  for(let i=0;i<30;i++){p.sample({speed:0,gLong:0,rpm:900},t);t+=50;}for(let v=0;v<=200;v+=1.2){p.sample({speed:v,gLong:0.68,rpm:3000},t);t+=50;}for(let i=0;i<10;i++){p.sample({speed:150,gLong:-0.3,rpm:3000},t);t+=50;}
+  let h=p.view(t).history;assert(h.rows.some((e)=>e.kind==='drag'&&e.result['0-60mph']>0),'the drag run is listed');assert.equal(h.days,30);
+  clock=T0+10*DAY;
+  for(let i=0;i<20;i++){p.sample({speed:110,gLong:0,rpm:2000},t);t+=50;}const a=9.80665*3.6;for(let v=110;v>0;v-=a*0.05){p.sample({speed:Math.max(0,v),gLong:-1,rpm:1500},t);t+=50;}p.sample({speed:0,gLong:-1,rpm:800},t);
+  h=p.view(t).history;assert.equal(h.rows[0].kind,'brake','newest first');assert.equal(h.rows[0].at,clock);const n=h.count;assert(n>=2);
+  assert.equal(mk().view(0).history.count,n,'kept over a restart');
+  clock=T0+31*DAY;const q=mk();q.idle(0);const left=q.view(0).history;assert(left.count>0&&left.count<n,'the month-old ones are gone, the newer stay');assert(left.rows.every((e)=>clock-e.at<30*DAY));
+  assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'perf-history.json'),'utf8')).length,left.count,'and gone from the file');
+  clock=T0+45*DAY;const r=mk();r.idle(0);assert.equal(r.view(0).history.count,0);
+  clock=0;const cold=new Perf(null,perfSettings(),fs.mkdtempSync(path.join(tmp,'perf-')),quiet);cold.hist=[{at:T0,kind:'dyno',peakP:1,peakPrpm:1,peakT:1,peakTrpm:1}];cold.now=()=>5;cold.idle(0);assert.equal(cold.hist.length,1,'a head unit without the time deletes nothing');
+  const d2=fs.mkdtempSync(path.join(tmp,'perf-')),demo=new Perf(null,perfSettings(),d2,quiet);t=0;for(let i=0;i<30;i++){demo.sample({speed:0,gLong:0.6,rpm:3000,demo:true},t);t+=50;}for(let v=0;v<=120;v+=1.2){demo.sample({speed:v,gLong:0.6,rpm:3000,demo:true},t);t+=50;}for(let i=0;i<10;i++){demo.sample({speed:80,gLong:0.6,rpm:3000,demo:true},t);t+=50;}
+  assert(demo.view(t).history.count>0);assert(!fs.existsSync(path.join(d2,'perf-history.json')),'demo runs are not saved');
+  for(let i=0;i<20;i++)demo.record({kind:'dyno',peakP:300000,peakPrpm:5800,peakT:500,peakTrpm:2400});const v1=demo.view(t).history;assert.equal(v1.rows.length,6);assert(v1.pages>1);demo.histTurn(1);assert.equal(demo.view(t).history.page,1);demo.histTurn(-5);assert.equal(demo.view(t).history.page,0);
+ });
  console.log(passed+' SMILEY integration checks passed. No vehicle connected.');
 }
 run().catch((e)=>{console.error(e.stack);process.exitCode=1;});
