@@ -13,7 +13,8 @@ const GAUGE_NAMES = { rpm: 'RPM', boost: 'Boost', oil: 'Oil temp', coolant: 'Coo
     load: 'Engine load', torque: 'Torque', misfire: 'Misfires' };
 // Tabs switched off in this build. Their code stays in place; the tests turn them back on
 // with SMILEY_ALL_TABS=1. A hidden page has the index -1, which no tab or button can select.
-const HIDDEN = process.env.SMILEY_ALL_TABS === '1' ? [] : ['Phone', 'Connect', 'Flash'];
+// AWD / 2WD is switched off as well: the owner's rear driveshaft broke on hard launches in 2WD (Nov 2026).
+const HIDDEN = process.env.SMILEY_ALL_TABS === '1' ? [] : ['Phone', 'Connect', 'Flash', 'AWD / 2WD'];
 const ALL_TABS = [['stats', 'Live Stats'], ['xdrive', 'AWD / 2WD'], ['perf', 'Perf'], ['controls', 'Tune'], ['phone', 'Phone'],
     ['faults', 'Faults'], ['connect', 'Connect'], ['flash', 'Flash'], ['info', 'Info']];
 const TABS = [], PAGE = {};
@@ -806,7 +807,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.2.5 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.2.6 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);

@@ -22,9 +22,9 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.2.5 &nbsp;·&nb
 
 What changed in each version: [release notes](CHANGELOG.md).
 
-Six tabs across the top of the screen in version 0.2.5: Live Stats, AWD / 2WD,
-Perf, Tune, Faults and Info. **Phone, Connect and Flash are switched off for
-now**; their sections below describe what they do when they return. The
+Five tabs across the top of the screen in version 0.2.6: Live Stats, Perf,
+Tune, Faults and Info. **AWD / 2WD, Phone, Connect and Flash are switched off
+for now**; their sections below describe what they do if they return. The
 screenshots come from the simulation, with demo data.
 
 <table>
@@ -92,7 +92,10 @@ and a tap on any reading opens it in big number mode.
 Switches xDrive off, so the car drives the rear wheels only, and shows what
 the car reports back. A checklist tells you when it is safe to switch.
 
-Experimental, and off until you turn it on in Settings.
+**Switched off since 0.2.6.** A rear driveshaft broke on hard launches with
+the car in 2WD, where the rear axle takes all of the engine's torque. The tab
+and its setting are hidden, and the app sends nothing to the stability
+control unit.
 
 </td>
 <td width="55%"><img src="docs/screenshots/awd-2wd.png" alt="AWD / 2WD tab"></td>
@@ -288,16 +291,13 @@ thing that looks wrong.**
 3. Open More gauges and check the same way. Lambda should be near 1.00 at warm
    idle.
 4. On Faults, press Read faults, then Scan car. Both only read.
-5. On AWD / 2WD, turn the switch on in Settings and check that the checklist
-   matches the car, without pressing Switch to 2WD.
-6. Only then try what sends commands: a map change, the exhaust, clearing
-   faults, and last of all 2WD, in an empty lot.
+5. Only then try what sends commands: a map change, the exhaust, clearing
+   faults.
 
 **What to know**
 
-- **AWD / 2WD is experimental.** Traction and stability control may behave
-  differently in 2WD, and that was not measured. The car stores a fault code
-  while xDrive is off.
+- **AWD / 2WD is switched off.** In 2WD the rear driveshaft, axles and
+  differential carry all of the torque, and a hard launch broke a driveshaft.
 - **Clearing faults erases them.** Read the codes first.
 - **The dyno is an estimate** from the weight and drivetrain loss set in
   Settings, not a dyno reading.
@@ -316,7 +316,7 @@ thing that looks wrong.**
 
 ```sh
 python3 kit/tools/build.py --preview-only smiley   # stage the app without the BMW SDK
-node tests/test-smiley.js                          # 51 integration checks
+node tests/test-smiley.js                          # 52 integration checks
 node tests/test-native-flow.js                     # the app on the head-unit stub
 node tests/test-edit-gauges.js                     # press-and-hold gauge editing
 node tests/test-phone-net.js                       # the phone access helper, against a pretend firewall

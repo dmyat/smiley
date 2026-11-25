@@ -72,7 +72,7 @@ mgu.run({async start(ctx){
     if(flash.recovery&&!session.demo)session.paused=true;
     async function refresh(){
         if(session.demo)return;
-        await session.action(async()=>{await controller.refresh();await tune.start(link);await xdrive.start(link);
+        await session.action(async()=>{await controller.refresh();await tune.start(link);if(P.xdrive>=0)await xdrive.start(link);          // nothing is asked of the DSC while the AWD / 2WD tab is switched off
             // The Info page's own copy of who the engine computer is. The exhaust controller reads it only
             // with Exhaust control on (off, it sends nothing at all); these reads only ask, so the page
             // gets them either way.

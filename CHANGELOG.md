@@ -2,6 +2,14 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.2.6
+
+- **AWD / 2WD tab switched off.** A rear driveshaft broke on hard launches
+  with the car in 2WD, where the rear axle takes all of the engine's torque.
+  The tab and its setting are hidden and the app no longer asks the stability
+  control unit anything. The car itself goes back to AWD every time the
+  ignition is cycled, so nothing needs undoing.
+
 ## 0.2.5
 
 - **Smoother gauges.** The fast gauges on screen are now asked for together in
