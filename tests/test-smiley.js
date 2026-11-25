@@ -199,14 +199,26 @@ async function run(){
   const bad=new Telemetry(c,new Session(),()=>now);assert.deepStrictEqual(bad.learned,{torque:{min:0,max:520}});
  });
  await test('Gauge layout: swapping and changing never loses or repeats a gauge, and is remembered',async()=>{
-  const dir=fs.mkdtempSync(path.join(tmp,'layout-'));const g=new GaugeLayout(dir,quiet);assert.deepStrictEqual(g.slots,DEFAULT);assert.equal(g.page(0).length,6);assert.deepStrictEqual(g.page(1)[0],'hpfp');assert.deepStrictEqual(g.slots.slice(12),['stft1','stft2','lpfp','misfire'],'four gauges start off the pages');
+  const dir=fs.mkdtempSync(path.join(tmp,'layout-'));const g=new GaugeLayout(dir,quiet);assert.deepStrictEqual(g.slots,DEFAULT);assert.equal(g.page(0).length,6);assert.deepStrictEqual(g.page(1)[0],'hpfp');assert.deepStrictEqual(g.slots.slice(12),['stft1','stft2','lpfp','misfire','load'],'five gauges start off the pages');assert.equal(g.page(1)[4],'power','horsepower is on the second page');
   assert(g.set(1,'lpfp'));assert.equal(g.slots[1],'lpfp');assert.equal(g.slots[14],'boost','the gauge that was there goes to the spare place');assert(g.set(1,'boost'));assert(!g.set(1,'nope'));assert(!g.set(99,'rpm'));assert.deepStrictEqual(g.slots,DEFAULT);
   assert(g.swap(0,9));assert.equal(g.slots[0],'boostTarget');assert.equal(g.slots[9],'rpm');assert.equal(g.swap(3,3),false);assert.equal(g.swap(3,99),false);
   const was=g.slots[1],next=g.change(1,1);assert.equal(g.slots[1],next);assert(g.slots.indexOf(was)>=0&&g.slots.indexOf(was)!==1,'the old gauge moved, it was not dropped');
-  for(let i=0;i<40;i++){g.change(i%16,1);g.swap(i%16,(i*7)%16);assert(GaugeLayout.valid(g.slots));assert.equal(new Set(g.slots).size,16);}
+  for(let i=0;i<40;i++){g.change(i%16,1);g.swap(i%16,(i*7)%16);assert(GaugeLayout.valid(g.slots));assert.equal(new Set(g.slots).size,17);}
   const again=new GaugeLayout(dir,quiet);assert.deepStrictEqual(again.slots,g.slots);again.reset();assert.deepStrictEqual(new GaugeLayout(dir,quiet).slots,DEFAULT);
   fs.writeFileSync(path.join(dir,'gauges.json'),JSON.stringify({slots:['rpm','rpm']}));assert.deepStrictEqual(new GaugeLayout(dir,quiet).slots,DEFAULT);
   fs.writeFileSync(path.join(dir,'gauges.json'),'{oops');assert.deepStrictEqual(new GaugeLayout(dir,quiet).slots,DEFAULT);
+  // a layout saved before horsepower existed keeps its places: horsepower takes engine load's place on the page
+  const old=['boost','rpm','oil','coolant','iat','oilp','hpfp','timing','lambda','boostTarget','load','torque','stft1','stft2','lpfp','misfire'];
+  fs.writeFileSync(path.join(dir,'gauges.json'),JSON.stringify({slots:old}));const up=new GaugeLayout(dir,quiet).slots;
+  assert.equal(up.length,17);assert.deepStrictEqual(up.slice(0,10),old.slice(0,10),'the owner\'s own order is kept');assert.equal(up[10],'power');assert.equal(up[16],'load');assert(GaugeLayout.valid(up));
+  const off=old.slice();off[10]='lpfp';off[14]='load';fs.writeFileSync(path.join(dir,'gauges.json'),JSON.stringify({slots:off}));const up2=new GaugeLayout(dir,quiet).slots;
+  assert.deepStrictEqual(up2.slice(0,16),off,'with engine load not on a page nothing moves');assert.equal(up2[16],'power');
+ });
+ await test('Live horsepower is the engine computer\'s torque times engine speed, with its own highest value',async()=>{
+  let now=1e6;const t=new Telemetry(ctx(),new Session(),()=>now);
+  const d=t.snapshot(true);assert(Math.abs(d.power-d.torque*d.rpm/7120.91)<1e-6);assert(d.power>20&&d.power<400,'demo: '+d.power);assert(d.peaks.power&&d.peaks.power.max>=d.power-1e-6);
+  assert.equal(t.track({torque:500,rpm:5500}).power.toFixed(0),'386','500 Nm at 5500 rpm is 386 hp');assert.equal(t.track({torque:0,rpm:800}).power,0);
+  assert.equal(t.track({torque:null,rpm:3000}).power,null);assert.equal(t.track({torque:300,rpm:null}).power,null,'no torque or no engine speed: no number');
  });
  await test('Christmas surprises: brief, of a known kind, in roughly three slots of five, and none between',async()=>{
   let shown=0;const slots=400,seen=new Set();

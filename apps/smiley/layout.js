@@ -2,9 +2,9 @@
 /**
  * layout.js - which gauge sits where on the two Live Stats pages.
  *
- * Sixteen slots, each holding one gauge, each gauge exactly once. Slots 0-5 are the main page and
- * 6-11 the second (three across, two down); slots 12-15 are the gauges not on show. The owner picks
- * what a slot shows from the list of all sixteen: the chosen gauge trades places with the one that
+ * Seventeen slots, each holding one gauge, each gauge exactly once. Slots 0-5 are the main page and
+ * 6-11 the second (three across, two down); slots 12-16 are the gauges not on show. The owner picks
+ * what a slot shows from the list of all seventeen: the chosen gauge trades places with the one that
  * was there, so nothing is ever lost or shown twice. Kept in data/gauges.json; a file that is not a
  * full set of the known gauges is ignored.
  */
@@ -12,8 +12,8 @@ const fs = require('fs');
 const path = require('path');
 
 const DEFAULT = ['rpm', 'boost', 'oil', 'coolant', 'iat', 'oilp',
-    'hpfp', 'timing', 'lambda', 'boostTarget', 'load', 'torque',
-    'stft1', 'stft2', 'lpfp', 'misfire'];
+    'hpfp', 'timing', 'lambda', 'boostTarget', 'power', 'torque',
+    'stft1', 'stft2', 'lpfp', 'misfire', 'load'];
 const PER_PAGE = 6, PAGES = 2;
 
 class GaugeLayout {
@@ -22,10 +22,24 @@ class GaugeLayout {
         this.slots = DEFAULT.slice();
         try {
             const saved = this.file ? JSON.parse(fs.readFileSync(this.file, 'utf8')) : null;
-            if (saved && GaugeLayout.valid(saved.slots)) this.slots = saved.slots.slice();
+            const slots = saved && GaugeLayout.upgrade(saved.slots);
+            if (slots) this.slots = slots;
         } catch (e) { /* first start, or not readable: the default layout */ }
     }
     static valid(slots) { return Array.isArray(slots) && slots.length === DEFAULT.length && DEFAULT.every((id) => slots.indexOf(id) >= 0); }
+    /**
+     * A saved layout from before a gauge was added keeps its places: horsepower takes engine load's
+     * place when that is on a page (load moves to the gauges not on show), any other new gauge joins
+     * the ones not on show. Null when the list is not a set of known gauges.
+     */
+    static upgrade(slots) {
+        if (GaugeLayout.valid(slots)) return slots.slice();
+        if (!Array.isArray(slots) || !slots.length || new Set(slots).size !== slots.length || !slots.every((id) => DEFAULT.indexOf(id) >= 0)) return null;
+        const out = slots.slice(), at = out.indexOf('load');
+        if (out.indexOf('power') < 0 && at >= 0 && at < PER_PAGE * PAGES) { out[at] = 'power'; out.push('load'); }
+        DEFAULT.forEach((id) => { if (out.indexOf(id) < 0) out.push(id); });
+        return GaugeLayout.valid(out) ? out : null;
+    }
     /** The gauges of one page (0 | 1), in order. */
     page(n) { return this.slots.slice(n * PER_PAGE, n * PER_PAGE + PER_PAGE); }
     save() {

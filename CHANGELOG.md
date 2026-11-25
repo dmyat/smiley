@@ -2,6 +2,16 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.2.7
+
+- **Live horsepower gauge.** A new Live Stats gauge shows horsepower as you
+  drive, with its highest value so far. It is the engine computer's own
+  crankshaft torque multiplied by engine speed, so it is the engine's
+  estimate at the crank, not a measurement at the wheels like a dyno.
+- It sits on the second gauge page, where engine load was; engine load moves
+  to the list of gauges not on show. A layout you arranged yourself keeps its
+  order. It can be picked for any place and opened in big number mode.
+
 ## 0.2.6
 
 - **AWD / 2WD tab switched off.** A rear driveshaft broke on hard launches

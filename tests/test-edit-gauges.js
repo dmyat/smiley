@@ -32,7 +32,7 @@ setTimeout(async()=>{
   assert(!targets().some((t)=>/^pick-/.test(t.key)),'choosing closes the list');
   await tap('slot2');assert(targets().some((t)=>t.key==='pick-rpm'));                 // right-hand card: the list opens on the left
   assert(!targets().some((t)=>t.key==='slot0'||t.key==='slot3'));
-  await tap('pick-boost');s=slots();assert.equal(s[2],'boost');assert.equal(s[1],'oil','a gauge already on the page trades places');assert.equal(new Set(s).size,16);
+  await tap('pick-boost');s=slots();assert.equal(s[2],'boost');assert.equal(s[1],'oil','a gauge already on the page trades places');assert.equal(new Set(s).size,17);
   await tap('slot1');await tap('slot1');assert(!targets().some((t)=>/^pick-/.test(t.key)),'a second tap on the gauge closes the list');
   await tap('editDone');assert(!targets().some((t)=>/^slot/.test(t.key)),'Done closes the editor');
   await tap('editStart');assert(targets().some((t)=>t.key==='slot0'),'the Edit gauges button opens it too');

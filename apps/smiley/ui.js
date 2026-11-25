@@ -10,7 +10,7 @@ const COLS = 3, TILE_W = 508, TILE_H = 186, PITCH_X = 522, PITCH_Y = 196;
 const ZONES = { rpm: () => 6500, oil: (f) => (f ? 266 : 130), coolant: (f) => (f ? 239 : 115) };
 const GAUGE_NAMES = { rpm: 'RPM', boost: 'Boost', oil: 'Oil temp', coolant: 'Coolant', iat: 'Intake temp', stft1: 'Fuel trim 1', stft2: 'Fuel trim 2',
     hpfp: 'High fuel press', timing: 'Timing', lambda: 'Lambda', lpfp: 'Low fuel press', oilp: 'Oil pressure', boostTarget: 'Boost target',
-    load: 'Engine load', torque: 'Torque', misfire: 'Misfires' };
+    load: 'Engine load', torque: 'Torque', power: 'Horsepower', misfire: 'Misfires' };
 // Tabs switched off in this build. Their code stays in place; the tests turn them back on
 // with SMILEY_ALL_TABS=1. A hidden page has the index -1, which no tab or button can select.
 // AWD / 2WD is switched off as well: the owner's rear driveshaft broke on hard launches in 2WD (Nov 2026).
@@ -392,7 +392,7 @@ function stats(cv,v,a) {
         rpm:[0,8000], boost:psi?[-15,35]:[-1,2.5],
         oil:f?[100,300]:[40,150], coolant:f?[100,260]:[40,130], iat:f?[0,200]:[-20,100], trim:[-25,25],
         hpfp:psi?[0,6000]:[0,400], timing:[-30,60], lambda:[0.5,2],
-        lpfp:psi?[0,120]:[0,8], oilp:psi?[0,120]:[0,8], load:[0,200], torque:lbft?[0,600]:[0,800],
+        lpfp:psi?[0,120]:[0,8], oilp:psi?[0,120]:[0,8], load:[0,200], torque:lbft?[0,600]:[0,800], power:[0,600],
     };
     // every gauge the app has, by id; the owner chooses which sit on which page (layout.js)
     const DEF={
@@ -404,6 +404,8 @@ function stats(cv,v,a) {
         lpfp:['LOW FUEL PRESS',press(d.lpfp),pU,R.lpfp[0],R.lpfp[1],psi?0:1,'lpfp',press], oilp:['OIL PRESSURE',press(d.oilp),pU,R.oilp[0],R.oilp[1],psi?0:1,'oilp',press],
         boostTarget:['BOOST TARGET',press(d.boostTarget),pU,R.boost[0],R.boost[1],1,'boostTarget',press], load:['ENGINE LOAD',d.load,'%',R.load[0],R.load[1],0,'load',(n)=>n],
         torque:['TORQUE',tq(d.torque),lbft?'lb-ft':'Nm',R.torque[0],R.torque[1],0,'torque',tq], misfire:null,
+        // live horsepower at the crankshaft, from the engine computer's torque and the engine speed (telemetry.js)
+        power:['HORSEPOWER',d.power,'hp',R.power[0],R.power[1],0,'power',(n)=>n],
     };
     const ids=v.gauges, items=ids.map((id)=>DEF[id]), pk=d.peaks||{}, base=(v.statsPage?1:0)*PER_PAGE, ed=v.edit;
     if(v.layout&&LAYOUTS[v.layout]&&!ed&&!(v.big&&DEF[v.big])){LAYOUTS[v.layout].draw(cv,{DEF,items,pk,f,v,a,d});layoutFoot(cv,v,a,d);return;}
@@ -621,7 +623,7 @@ function slotAt(x,y) {
     return row*COLS+col;
 }
 /**
- * The drop-down of the gauge editor: all sixteen gauges, two columns of eight, over one column of
+ * The drop-down of the gauge editor: all seventeen gauges, two columns of up to nine, over one column of
  * cards. The one in the picked slot is filled; each other says where it is now (page 1, page 2, or
  * not on show). A tap puts that gauge in the picked slot.
  */
@@ -630,11 +632,11 @@ function pickList(cv,v,a,x,y) {
     cv.roundRect(x,y,TILE_W,h,14,THEME.panelTop); cv.strokeRoundRect(x,y,TILE_W,h,14,2,THEME.accent);
     text(cv,'SHOW IN THIS PLACE',x+18,y+30,17,THEME.accent2,{font:'bold',spacing:1});
     GAUGE_IDS.forEach((id,i)=>{
-        const bx=x+12+Math.floor(i/8)*244, by=y+46+(i%8)*41, bw=240, bh=36, at=slots.indexOf(id), here=at===picked;
+        const bx=x+12+Math.floor(i/9)*244, by=y+44+(i%9)*37, bw=240, bh=33, at=slots.indexOf(id), here=at===picked;
         cv.roundRect(bx,by,bw,bh,8,here?THEME.accent:THEME.card);
         if(!here)cv.strokeRoundRect(bx,by,bw,bh,8,1,withAlpha(THEME.accent,0.3));
-        text(cv,GAUGE_NAMES[id]||id,bx+12,by+24,18,here?THEME.ink:THEME.text,{font:here?'bold':'label'});
-        text(cv,here?'HERE':at<PER_PAGE?'PAGE 1':at<2*PER_PAGE?'PAGE 2':'OFF',bx+bw-10,by+23,12,here?THEME.ink:at<2*PER_PAGE?THEME.dim:THEME.off,{align:'right',font:'bold',spacing:1});
+        text(cv,GAUGE_NAMES[id]||id,bx+12,by+22,18,here?THEME.ink:THEME.text,{font:here?'bold':'label'});
+        text(cv,here?'HERE':at<PER_PAGE?'PAGE 1':at<2*PER_PAGE?'PAGE 2':'OFF',bx+bw-10,by+21,12,here?THEME.ink:at<2*PER_PAGE?THEME.dim:THEME.off,{align:'right',font:'bold',spacing:1});
         if(cv.target)cv.target(bx,by,bw,bh,()=>a.editSet(id),'pick-'+id);
     });
 }
@@ -649,7 +651,7 @@ const SIGNAL=['#35c46a','#b7d443','#f2c043','#f2823a','#ec3440'], SEGMENTS=14;
 const TEMP_RAMP=['#2f7df0','#56b6f0','#f0b85a','#f0703c','#ec3440'];
 // Bars for what sweeps quickly through its range and is read as "how much of it am I using"; dials for
 // what settles around a normal value (temperatures, pressures) or swings either side of a centre.
-const BARS=['rpm','boost','boostTarget','load','torque'], TEMPS=['oil','coolant','iat'];
+const BARS=['rpm','boost','boostTarget','load','torque','power'], TEMPS=['oil','coolant','iat'];
 // the palette in use with the temperature colours on its dial band (made once per theme)
 let tempThemeFor=null, tempThemeIs=null;
 function tempTheme(){
@@ -807,7 +809,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.2.6 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.2.7 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);

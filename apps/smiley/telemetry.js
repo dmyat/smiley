@@ -17,7 +17,9 @@ const CONDITIONS = { PARKEN_BN_NIO: 1, PARKEN_BN_IO: 2, STANDFUNKTIONEN_KUNDE_NI
     PRUEFEN_ANALYSE_DIAGNOSE: 7, FAHRBEREITSCHAFT_HERSTELLEN: 8, FAHREN: 10, FAHRBEREITSCHAFT_BEENDEN: 12 };
 const conditionOf = (x) => { const n = typeof x === 'number' ? x : CONDITIONS[x]; return n >= 1 && n <= 12 ? n : undefined; };
 const gearOf = (x) => (typeof x === 'number' ? (x >= 3 && x <= 12 ? x - 2 : x === 1 ? -1 : x === 2 ? 0 : undefined) : GEARS[x]);
-const PEAK_KEYS = ['rpm', 'boost', 'oil', 'coolant', 'iat', 'hpfp', 'stft1', 'stft2', 'timing', 'lambda', 'lpfp', 'oilp', 'boostTarget', 'load', 'torque'];
+const PEAK_KEYS = ['rpm', 'boost', 'oil', 'coolant', 'iat', 'hpfp', 'stft1', 'stft2', 'timing', 'lambda', 'lpfp', 'oilp', 'boostTarget', 'load', 'torque', 'power'];
+// Live horsepower: the engine computer's own crankshaft torque times engine speed (Nm x rpm / 7120.9 = hp).
+const horsepower = (torqueNm, rpm) => (typeof torqueNm === 'number' && typeof rpm === 'number' && isFinite(torqueNm) && isFinite(rpm) ? Math.max(0, torqueNm * rpm / 7120.91) : null);
 // Read as fast as the engine unit answers: the gauges of the page on screen every turn, the rest about once a second.
 const QUICK = ['boost', 'hpfp', 'timing', 'lambda', 'boostTarget', 'load', 'lpfp', 'oilp'];      // the ones that move fast enough to be worth it
 const SLOW_MS = 1000;
@@ -272,6 +274,7 @@ class Telemetry {
         try { const tmp = this.rangeFile + '.tmp'; fs.writeFileSync(tmp, JSON.stringify(this.learned)); fs.renameSync(tmp, this.rangeFile); } catch (e) { this.ctx.log.warn('ranges: ' + e); }
     }
     track(v) {
+        v.power = horsepower(v.torque, v.rpm);
         PEAK_KEYS.forEach((k) => {
             const n = v[k]; if (typeof n !== 'number' || !isFinite(n)) return;
             const p = this.peaks[k] || (this.peaks[k] = { min: n, max: n });
