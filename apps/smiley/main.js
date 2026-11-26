@@ -1,5 +1,6 @@
 'use strict';
 const { Warm } = require('./warm');
+const { Assistant, PRESETS: AI_PRESETS } = require('./ai');
 const mgu=require('./kit/mgu');
 const UI=require('./ui');
 const {Controller}=require('./controller');
@@ -98,7 +99,7 @@ mgu.run({async start(ctx){
     function setPage(i){
         if(flash.programming){page=P.flash;repaint();return;}
         betaEntry=i===P.connect||i===P.flash?i:null;
-        edit=null;big=null;page=i;faults.cancelConfirm();flash.confirmUntil=0;notice='';repaint();
+        edit=null;big=null;aiKb=null;page=i;faults.cancelConfirm();flash.confirmUntil=0;notice='';repaint();
     }
     const acts={
         tuner:(name)=>action(async()=>{
@@ -167,7 +168,25 @@ mgu.run({async start(ctx){
         }),
         betaContinue:()=>{betaEntry=null;notice='';repaint();},
         betaBack:()=>setPage(P.stats),
+        aiKey:()=>{aiKb={mode:'key',text:'',shift:false};repaint();},
+        aiType:()=>{aiKb={mode:'ask',text:'',shift:false};repaint();},
+        aiK:(c)=>{if(aiKb&&aiKb.text.length<(aiKb.mode==='key'?240:300)){aiKb.text+=c;if(aiKb.mode==='ask')aiKb.shift=false;}repaint();},
+        aiShift:()=>{if(aiKb)aiKb.shift=!aiKb.shift;repaint();},
+        aiBack:()=>{if(aiKb)aiKb.text=aiKb.text.slice(0,-1);repaint();},
+        aiSpace:()=>{if(aiKb&&aiKb.mode==='ask')aiKb.text+=' ';repaint();},
+        aiCancel:()=>{aiKb=null;repaint();},
+        aiDone:()=>{const k=aiKb;aiKb=null;if(!k)return;if(k.mode==='key'){assistant.setKey(k.text);repaint();}else if(k.text.trim()){repaint();assistant.ask(k.text).then(repaint);repaint();}else repaint();},
+        aiPreset:(i)=>{const p=AI_PRESETS[i];if(!p)return;assistant.ask(p[1],p[0]).then(repaint);repaint();},
+        aiForget:()=>{if(Date.now()<aiForgetUntil){assistant.forget();aiForgetUntil=0;}else aiForgetUntil=Date.now()+4000;repaint();},
     };
+    // AI tab (ai.js): chat only. The summary sent with a question: live readings and the fault codes last read; never the VIN.
+    let aiKb=null, aiForgetUntil=0;
+    const assistant=new Assistant({dataDir:ctx.dataDir,log,context:()=>{
+        const d=telemetry.snapshot(settings.get('demo')==='on'), n=(k,u,dp)=>typeof d[k]==='number'?k+' '+d[k].toFixed(dp||0)+u:null;
+        const live=[n('rpm',' rpm'),n('boost',' bar boost (relative)',2),n('boostTarget',' bar boost target',2),n('oil',' C oil'),n('coolant',' C coolant'),n('iat',' C intake air'),n('power',' hp'),n('torque',' Nm')].filter(Boolean).join(', ');
+        const fl=(faults.rows||[]).slice(0,8).map((r)=>r.code+' '+String(r.text||'').slice(0,70)).join('; ');
+        return 'Live: '+(live||'no live readings')+'. Fault codes last read: '+(fl||'none read or none stored')+'.';
+    }});
     // 0.3.0 made Slash the default look. A car that already had the app keeps its saved settings, so it
     // is moved to Slash once; after that the owner's own choice in Settings is left alone.
     try{const mark=require('path').join(ctx.dataDir,'look-0.3.0');const fs=require('fs');
@@ -196,6 +215,7 @@ mgu.run({async start(ctx){
         }
         else if(page===P.faults){v.faultScope=faults.scope;v.faultRows=faults.rows;v.faultPage=faultPage;v.faultNote=faults.note;v.scanned=!!faults.at||!!faults.savedAt;v.clearPending=Date.now()<faults.confirmUntil;}
         else if(page===P.xdrive)v.xdrive=xdrive.view();
+        else if(page===P.ai){v.ai=assistant.view();v.aiKb=aiKb;v.aiForget=Date.now()<aiForgetUntil;}
         else if(page===P.perf)v.perf=perf.view(Date.now());
         else if(page===P.phone)v.phone=phone.view();
         else if(page===P.connect||page===P.flash)v.flash=flash.view();

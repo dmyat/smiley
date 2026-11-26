@@ -2,6 +2,15 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.3.1
+
+- **New AI tab.** Ask an AI assistant about the car: four ready-made
+  questions or your own, typed on the app's touch keyboard. It needs your own
+  API key (Anthropic or OpenAI) and internet in the car. A question goes out
+  with the live readings and the fault codes last read; never the VIN.
+- Chat only: it cannot run anything or change the car. The key is saved on
+  the head unit only, and Forget key deletes it.
+
 ## 0.3.0
 
 - **New default look: Slash.** Racing red cut across black with white

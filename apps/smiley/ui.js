@@ -17,7 +17,7 @@ const GAUGE_NAMES = { rpm: 'RPM', boost: 'Boost', oil: 'Oil temp', coolant: 'Coo
 // AWD / 2WD is back since 0.2.10 at the owner's wish; the page warns against hard launches in 2WD.
 const HIDDEN = process.env.SMILEY_ALL_TABS === '1' ? [] : ['Phone', 'Connect', 'Flash'];
 const ALL_TABS = [['stats', 'Live Stats'], ['xdrive', 'AWD / 2WD'], ['perf', 'Perf'], ['controls', 'Tune'], ['phone', 'Phone'],
-    ['faults', 'Faults'], ['connect', 'Connect'], ['flash', 'Flash'], ['info', 'Info']];
+    ['faults', 'Faults'], ['connect', 'Connect'], ['flash', 'Flash'], ['ai', 'AI'], ['info', 'Info']];
 const TABS = [], PAGE = {};
 ALL_TABS.forEach((t) => { if (HIDDEN.indexOf(t[1]) >= 0) PAGE[t[0]] = -1; else { PAGE[t[0]] = TABS.length; TABS.push(t[1]); } });
 // Two colour themes. THEME is the one in use: setTheme() copies a palette into it, so every page
@@ -235,6 +235,7 @@ function draw(cv, v, act) {
     if(v.page===PAGE.phone) phone(cv,v,act);
     if(v.page===PAGE.faults) faults(cv,v,act);
     if(v.page===PAGE.info) info(cv,v);
+    if(v.page===PAGE.ai) aiPage(cv,v,act);
     if(v.page===PAGE.connect||v.page===PAGE.flash){
         if(v.betaGate) betaPage(cv,v,act);
         else if(v.page===PAGE.connect)connectPage(cv,v,act);
@@ -841,6 +842,56 @@ function info(cv,v) {
         text(cv,String(r.value).slice(0,52),x+22,y+54,22,r.value==='--'?THEME.dim:r.highlight?THEME.accent2||THEME.accent:THEME.text,r.highlight?{font:'bold'}:undefined);
     });
 }
+/** Break text into lines no wider than maxW. */
+function wrapText(cv,str,size,maxW,maxLines) {
+    const out=[]; let line='';
+    String(str).split(' ').forEach((w)=>{const t=line?line+' '+w:w;if(cv.textWidth(t,size,{literal:true})>maxW&&line){out.push(line);line=w;}else line=t;});
+    if(line)out.push(line);
+    return maxLines&&out.length>maxLines?out.slice(0,maxLines-1).concat([out[maxLines-1]+' ...']):out;
+}
+/*
+ * AI: ask an assistant about the car (ai.js). Ready-made questions down the left, the answer on the
+ * right. The keyboard is the app's own, on the touch screen: for the API key once, and for questions.
+ */
+const KB_ROWS=['1234567890-','qwertyuiop_','asdfghjkl.?',"zxcvbnm,'/:"];
+function aiKeyboard(cv,v,a) {
+    const k=v.aiKb, isKey=k.mode==='key', shown=isKey?(k.text.length>14?'*'.repeat(Math.min(24,k.text.length-6))+k.text.slice(-6):k.text):k.text;
+    text(cv,isKey?'API KEY  ('+k.text.length+' characters)':'YOUR QUESTION',44,84,18,THEME.accent2,{font:'bold',spacing:2});
+    card(cv,44,96,1512,52,10);
+    cv.text((shown.length>88?'...'+shown.slice(-88):shown)+'|',62,131,24,THEME.text,{font:'label',literal:true});
+    KB_ROWS.forEach((row,r)=>row.split('').forEach((ch,i)=>{
+        const c=k.shift?ch.toUpperCase():ch, x=44+i*114, y=160+r*76;
+        cv.roundRect(x,y,106,68,10,THEME.card);cv.strokeRoundRect(x,y,106,68,10,1,THEME.panelEdge);
+        cv.text(c,x+53,y+45,30,THEME.text,{font:'bold',align:'center',literal:true});
+        cv.target(x,y,106,68,()=>a.aiK(c),'kb-'+ch);
+    }));
+    [['Shift',a.aiShift,'kbShift',k.shift],['Delete',a.aiBack,'kbBack',false],['Space',a.aiSpace,'kbSpace',false],['Done',a.aiDone,'kbDone',true],['Cancel',a.aiCancel,'kbCancel',false]]
+        .forEach((b,i)=>button(cv,1312,160+i*61,244,b[0],b[1],b[2],b[3],false));
+    text(cv,isKey?'Type the key from your Anthropic or OpenAI account. It is saved on this head unit only.':'Your question goes to the AI service with a summary of the live readings and fault codes.',44,496,17,THEME.dim);
+}
+function aiPage(cv,v,a) {
+    const s=v.ai;
+    if(v.aiKb){aiKeyboard(cv,v,a);return;}
+    heading(cv,'AI',s.hasKey?s.provider+'  ·  '+s.model+'  ·  key '+s.keyHint:'Ask an AI about your car. Needs your own API key and internet in the car.');
+    if(!s.hasKey){
+        card(cv,44,160,1512,290,16);
+        text(cv,'Set up once',76,212,26,THEME.accent2,{font:'bold'});
+        ['1.  Get an API key from your Anthropic (Claude) or OpenAI account. It is billed to you by use.','2.  Connect the car to Wi-Fi or your phone hotspot.','3.  Press Enter key and type it in. It is saved on this head unit only.']
+            .forEach((l,i)=>text(cv,l,76,258+i*38,21,THEME.text));
+        text(cv,'Chat only: it answers questions. It cannot run anything or change the car.',76,392,19,THEME.dim);
+        button(cv,1180,376,340,'Enter key',a.aiKey,'aiKey',true,false);
+        if(s.error)text(cv,s.error,76,432,19,THEME.warn);
+        return;
+    }
+    s.presets.forEach((p,i)=>button(cv,44,160+i*62,430,p,()=>a.aiPreset(i),'aiPreset'+i,false,s.busy));
+    button(cv,44,160+4*62,430,'Type a question',a.aiType,'aiType',true,s.busy);
+    card(cv,500,160,1056,300,16);
+    if(s.question)cv.text(s.question.slice(0,80),530,198,20,THEME.accent2,{font:'bold',literal:true});
+    const body=s.busy?'Thinking...':s.error||s.answer||'Pick a question on the left, or type your own.';
+    wrapText(cv,body,21,996,8).forEach((l,i)=>cv.text(l,530,236+i*29,21,s.error&&!s.busy?THEME.warn:s.answer&&!s.busy?THEME.text:THEME.dim,{font:'label',literal:true}));
+    button(cv,1316,468,240,v.aiForget?'Press again':'Forget key',a.aiForget,'aiForget',!!v.aiForget,s.busy);
+    text(cv,'Answers can be wrong. Check anything important with a mechanic.',500,496,17,THEME.dim);
+}
 function plainNote(s) { s=String(s); NOTES.forEach((p)=>{ s=s.split(p[0]).join(p[1]); }); return s; }
 function xdrivePage(cv,v,a) {
     const x=v.xdrive, word={AWD:'AWD',RWD:'2WD',REQUESTED:'2WD',UNKNOWN:'--'}[x.mode], col={AWD:THEME.ok,RWD:THEME.warn,REQUESTED:THEME.accent2,UNKNOWN:THEME.dim}[x.mode];
@@ -870,7 +921,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.3.0 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.3.1 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);

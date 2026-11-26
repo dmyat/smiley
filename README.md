@@ -6,7 +6,7 @@
 
 **Your BMW's engine, tune, faults and performance timers, on the car's own screen.**
 
-An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.3.0 &nbsp;·&nbsp; by David Myat
+An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.3.1 &nbsp;·&nbsp; by David Myat
 
 [Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#ten-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
 
@@ -22,8 +22,8 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.3.0 &nbsp;·&nb
 
 What changed in each version: [release notes](CHANGELOG.md).
 
-Six tabs across the top of the screen in version 0.3.0: Live Stats, AWD / 2WD,
-Perf, Tune, Faults and Info. **Phone, Connect and Flash are switched off
+Seven tabs across the top of the screen in version 0.3.1: Live Stats, AWD / 2WD,
+Perf, Tune, Faults, AI and Info. **Phone, Connect and Flash are switched off
 for now**; their sections below describe what they do if they return. The
 screenshots come from the simulation, with demo data.
 
@@ -197,6 +197,21 @@ programming adapter is included. A separate warning appears every time you enter
 <td width="55%"><img src="docs/screenshots/info.png" alt="Info tab"></td>
 <td>
 
+### AI
+
+Ask an AI assistant about the car from the car's screen: four ready-made
+questions (explain my fault codes, are my temperatures OK, is my boost
+healthy, what to check before a hard drive) or type your own on the app's
+touch keyboard. Each question goes out with a short summary of the live
+readings and the fault codes last read. The VIN is never sent.
+
+It needs **your own API key** from Anthropic (Claude) or OpenAI, billed to
+you by use, and **internet in the car** (Wi-Fi or a phone hotspot). The key is
+typed in once and saved on the head unit only. Chat only: it answers
+questions and cannot run anything or change the car. Answers can be wrong.
+
+<img src="docs/screenshots/ai.png" alt="AI tab: the touch keyboard for entering the API key">
+
 ### Info
 
 The car's VIN, the engine computer's type, hardware and software numbers,
@@ -331,7 +346,7 @@ thing that looks wrong.**
 
 ```sh
 python3 kit/tools/build.py --preview-only smiley   # stage the app without the BMW SDK
-node tests/test-smiley.js                          # 55 integration checks
+node tests/test-smiley.js                          # 56 integration checks
 node tests/test-native-flow.js                     # the app on the head-unit stub
 node tests/test-edit-gauges.js                     # press-and-hold gauge editing
 node tests/test-phone-net.js                       # the phone access helper, against a pretend firewall

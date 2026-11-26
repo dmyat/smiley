@@ -252,6 +252,25 @@ async function run(){
   // a short burst asks for nothing
   w=new Warm();t=1000;w.sample({rpm:5000},t);for(let i=0;i<5;i++)w.sample({rpm:5000},t+=1000);w.sample({rpm:1000},t+=1000);assert.equal(w.view().cool,null);
  });
+ await test('AI: key handling, the request each service gets, plain answers and plain errors; never the VIN',async()=>{
+  const {Assistant,providerOf}=require(path.join(APP,'ai'));const dir=fs.mkdtempSync(path.join(os.tmpdir(),'ai-'));const calls=[];let reply={status:200,json:{content:[{type:'text',text:'Oil at 105 C is  normal.'}]}};
+  const mk=()=>new Assistant({dataDir:dir,log:{warn(){}},context:()=>'Live: oil 105 C. Fault codes last read: none.',post:async(host,p,h,b)=>{calls.push({host,p,h,b});if(reply instanceof Error)throw reply;return reply;}});
+  let a=mk();assert.equal(a.view().hasKey,false);await a.ask('hello');assert.equal(calls.length,0,'no key: nothing is sent');assert(/key/i.test(a.view().error));
+  assert.equal(a.setKey('short'),false);assert.equal(providerOf('sk-ant-abc'),'claude');assert.equal(providerOf('sk-proj-abc'),'openai');
+  assert(a.setKey('  sk-ant-api03-0123456789abcdefghij  '));assert.equal(a.view().provider,'Claude');assert.equal(a.view().keyHint,'...ghij');
+  assert.equal(fs.statSync(path.join(dir,'ai.json')).mode&0o077,0,'the key file is readable by the app only');
+  await a.ask('Is my oil ok?');let c=calls[0];assert.equal(c.host,'api.anthropic.com');assert.equal(c.p,'/v1/messages');assert.equal(c.h['x-api-key'],'sk-ant-api03-0123456789abcdefghij');assert.equal(c.h['anthropic-version'],'2023-06-01');
+  assert.equal(c.b.max_tokens,400);assert(/M340i/.test(c.b.system));assert(/oil 105 C/.test(c.b.messages[0].content));assert(!/3MW5U9J07M8B65601/.test(JSON.stringify(c.b)),'the VIN is not in the request');
+  assert.equal(a.view().answer,'Oil at 105 C is normal.');assert.equal(a.view().busy,false);
+  await a.ask('And coolant?');assert.equal(calls[1].b.messages.length,3,'the last exchange goes along');
+  assert.equal(mk().view().hasKey,true,'the key is remembered');
+  reply={status:401,json:{error:{message:'invalid x-api-key'}}};await a.ask('x');assert(/refused/.test(a.view().error));assert.equal(a.view().answer,'');
+  reply={status:429,json:{}};await a.ask('x');assert(/credit|many/.test(a.view().error));
+  reply=Object.assign(new Error('getaddrinfo ENOTFOUND api.anthropic.com'),{code:'ENOTFOUND'});await a.ask('x');assert(/No internet/.test(a.view().error));
+  a.setKey('sk-proj-0123456789abcdefghijklmn');reply={status:200,json:{choices:[{message:{content:'Fine.'}}]}};await a.ask('ok?');c=calls[calls.length-1];
+  assert.equal(c.host,'api.openai.com');assert.equal(c.h.authorization,'Bearer sk-proj-0123456789abcdefghijklmn');assert.equal(c.b.messages[0].role,'system');assert.equal(a.view().answer,'Fine.');
+  a.forget();assert.equal(a.view().hasKey,false);assert(!fs.existsSync(path.join(dir,'ai.json')));
+ });
  await test('Live horsepower is the engine computer\'s torque times engine speed, with its own highest value',async()=>{
   let now=1e6;const t=new Telemetry(ctx(),new Session(),()=>now);
   const d=t.snapshot(true);assert(Math.abs(d.power-d.torque*d.rpm/7120.91)<1e-6);assert(d.power>20&&d.power<400,'demo: '+d.power);assert(d.peaks.power&&d.peaks.power.max>=d.power-1e-6);
@@ -390,9 +409,9 @@ async function run(){
   const spec=JSON.parse(fs.readFileSync(path.join(__dirname,'../apps/smiley/app.json'),'utf8')), all=JSON.stringify(spec);
   assert(all.includes('"key":"splash"')||all.includes('"key": "splash"'));
  });
- await test('The shipped build has six tabs: AWD / 2WD is back, off until its setting is turned on',async()=>{
+ await test('The shipped build has seven tabs: AWD / 2WD is back, off until its setting is turned on',async()=>{
   const U=require(path.join(APP,'ui'));
-  assert.deepStrictEqual(U.TABS.slice().sort(),['AWD / 2WD','Faults','Info','Live Stats','Perf','Tune']);assert(U.PAGE.xdrive>=0);
+  assert.deepStrictEqual(U.TABS.slice().sort(),['AI','AWD / 2WD','Faults','Info','Live Stats','Perf','Tune']);assert(U.PAGE.xdrive>=0);
   const spec=JSON.parse(fs.readFileSync(path.join(__dirname,'../apps/smiley/app.json'),'utf8'));
   assert.equal(spec.settings.filter((x)=>x.key==='xdrive')[0].default,'off');
  });
