@@ -193,7 +193,11 @@ function draw(cv, v, act) {
     setTheme(v.theme,v.custom);
     cv.clear(THEME.bg);
     const warm=v.paused?null:warmup(v.oilC,v.tempUnit);
-    const badges=[warm&&{text:warm.text,color:warm.color},{text:v.demo?'DEMO':v.paused?'PAUSED':'SMILEY',color:v.demo?THEME.warn:THEME.accent}].filter(Boolean);
+    // beside it: how long until the oil is warm and the revs to keep under meanwhile; after hard driving, the turbo cool-down
+    const wv=v.paused?null:v.warm, mmss=(s)=>Math.floor(s/60)+':'+('0'+(s%60)).slice(-2);
+    const tip=!wv?null:warm&&warm.state!=='ready'&&wv.limit?{text:'KEEP UNDER '+wv.limit+' RPM'+(wv.minutes!=null?' · ~'+Math.max(1,Math.round(wv.minutes))+' MIN':''),color:warm.color}
+        :wv.cool&&wv.cool.state==='cooling'?{text:'TURBO COOL-DOWN '+mmss(wv.cool.left),color:'#f0b24a'}:wv.cool&&wv.cool.state==='done'?{text:'TURBO COOLED',color:'#86c3a0'}:null;
+    const badges=[tip,warm&&{text:warm.text,color:warm.color},{text:v.demo?'DEMO':v.paused?'PAUSED':'SMILEY',color:v.demo?THEME.warn:THEME.accent}].filter(Boolean);
     if(cv.chrome)G.frame(cv,THEME,TABS,v.page,badges);
     else{G.header(cv,THEME,190,0,1410,48,'',TABS,v.page,badges,true,false);text(cv,'SMILEY',25,35,28,THEME.text,{font:'bold',spacing:3});}
     if(v.page===PAGE.stats) stats(cv,v,act);
@@ -565,7 +569,8 @@ function carLayout(cv,o) {
     [[120,30,front],[120,270,front],[540,30,rear],[540,270,rear]].forEach((t)=>{cv.roundRect(X+t[0],Y+t[1],110,30,10,THEME.track);cv.strokeRoundRect(X+t[0],Y+t[1],110,30,10,2,t[2]);});
     cv.strokeRoundRect(X+95,Y+118,96,94,12,2,front);text(cv,'ENGINE',X+143,Y+171,15,front,{font:'bold',align:'center',spacing:2});
     cv.line(X+175,Y+60,X+175,Y+118,2,front);cv.line(X+175,Y+212,X+175,Y+270,2,front);cv.line(X+595,Y+60,X+595,Y+270,2,rear);cv.line(X+191,Y+165,X+595,Y+165,3,THEME.panelEdge);
-    text(cv,'FRONT',X+175,Y+18,16,front,{font:'bold',align:'center',spacing:2});text(cv,'REAR',X+595,Y+18,16,rear,{font:'bold',align:'center',spacing:2});
+    const sr=typeof o.v.splitRear==='number'?Math.round(o.v.splitRear):null;          // xDrive: share of the drive torque on each axle
+    text(cv,'FRONT'+(sr==null?'':' '+(100-sr)+' %'),X+175,Y+18,16,front,{font:'bold',align:'center',spacing:2});text(cv,'REAR'+(sr==null?'':' '+sr+' %'),X+595,Y+18,16,rear,{font:'bold',align:'center',spacing:2});
     // each tyre: its pressure on the tyre, its temperature beside it (bar and deg C in, shown in the driver's units)
     const ty=o.v.tyres, psi=o.v.pressUnit==='psi', fz=o.f;
     [['fl',120,30],['rl',540,30],['fr',120,270],['rr',540,270]].forEach((w)=>{
@@ -575,7 +580,8 @@ function carLayout(cv,o) {
         if(t&&typeof t.t==='number')text(cv,Math.round(fz?t.t*1.8+32:t.t)+(fz?'°F':'°C'),X+w[1]+120,Y+w[2]+21,15,THEME.dim);
     });
     const load=o.DEF.load, hints=o.v.tyreHints||[];
-    text(cv,'Engine load '+shown(load)+(load[1]==null?'':' %'),X+380,Y+334,17,THEME.dim,{align:'center'});
+    const gb=typeof o.v.gearboxC==='number'?'   ·   Gearbox oil '+Math.round(fz?o.v.gearboxC*1.8+32:o.v.gearboxC)+(fz?'°F':'°C'):'';
+    text(cv,'Engine load '+shown(load)+(load[1]==null?'':' %')+gb,X+380,Y+334,17,THEME.dim,{align:'center'});
     text(cv,(ty?(o.v.demo?'Tyre numbers are samples in the demo':Object.keys(ty).some((k)=>pressureState(ty[k].p,ty[k].target)==='low')?'A tyre is well under its target pressure':''):hints.length?'Tyre signals on this car: '+hints.join(', '):'Tyre pressure: no reading from the car yet').slice(0,110),X+380,Y+358,14,THEME.dim,{align:'center'});
 }
 const LAYOUTS={
@@ -811,7 +817,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.2.8 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.2.9 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);

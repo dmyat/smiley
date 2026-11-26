@@ -2,6 +2,20 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.2.9
+
+- **Warm-up timer.** Beside the warm-up light: about how many minutes until
+  the oil is warm, and the revs to keep under until then. The limit climbs
+  from 3500 rpm to the redline as the oil warms.
+- **Turbo cool-down.** After hard driving the header counts down how long to
+  drive gently or idle before switching off (30 seconds to 3 minutes), then
+  says the turbo has cooled.
+- **Car view: xDrive split and gearbox oil temperature.** The front and rear
+  share of the drive torque is shown on the car, and the gearbox oil
+  temperature under it, when the car sends them.
+- All read only. The method follows the Warm-Up and M Vitals apps of the
+  idrive7-apps kit (MIT), credited in NOTICE.
+
 ## 0.2.8
 
 - **Real tyre pressures and temperatures on Car view.** They come from the

@@ -26,3 +26,8 @@ see kit/runtime/fonts/OFL-Inter.txt.
 Tyre pressure monitor signals (apps/smiley/tyres.js): the signal names, scaling and
 unit handling follow the M Vitals app (apps/car_vitals) of cauliflowermossgrape/idrive7-apps,
 MIT License, Copyright (c) 2026 cauliflowermossgrape.
+
+Warm-up timer and turbo cool-down (apps/smiley/warm.js), gearbox oil temperature and xDrive
+torque split: the method and scaling follow the Warm-Up (apps/warmup) and M Vitals
+(apps/car_vitals) apps of cauliflowermossgrape/idrive7-apps, MIT License,
+Copyright (c) 2026 cauliflowermossgrape.

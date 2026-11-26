@@ -1,4 +1,5 @@
 'use strict';
+const { Warm } = require('./warm');
 const mgu=require('./kit/mgu');
 const UI=require('./ui');
 const {Controller}=require('./controller');
@@ -167,6 +168,11 @@ mgu.run({async start(ctx){
         betaContinue:()=>{betaEntry=null;notice='';repaint();},
         betaBack:()=>setPage(P.stats),
     };
+    // warm-up minutes, the safe rev limit and the turbo cool-down (warm.js): fed once a second from the car's values
+    const warm=new Warm();
+    const mono=()=>{const h=process.hrtime();return h[0]*1000+h[1]/1e6;};
+    const warmTimer=setInterval(()=>{if(settings.get('demo')==='on')return;const d=telemetry.data();warm.sample({rpm:telemetry.fresh('rpm',3000),torque:d.torque,speed:telemetry.fresh('speed'),oil:telemetry.fresh('oil',30000)},mono());},1000);
+    if(warmTimer.unref)warmTimer.unref();
     // One frame. Only the page on screen is worked out: the other tabs cost nothing while hidden.
     function frame(){
         const demo=settings.get('demo')==='on';
@@ -175,6 +181,8 @@ mgu.run({async start(ctx){
         v.tyres=demo?{fl:{p:2.48,target:2.5,t:31},fr:{p:2.48,target:2.5,t:32},rl:{p:2.62,target:2.7,t:34},rr:{p:2.25,target:2.7,t:33}}:telemetry.tyres.view();v.tyreHints=tyreHints;          // from the car's tyre pressure monitor (tyres.js)
         v.big=big;v.layout=settings.get('statsLayout');v.splash=settings.get('splash')==='off'?null:Date.now()-splashAt;
         v.oilC=demo?101:telemetry.fresh('oil',30000);          // the warm-up light in the header
+        v.warm=demo?{minutes:null,limit:7000,redline:7000,cool:null}:warm.view();
+        v.gearboxC=demo?78:telemetry.fresh('gearboxOil',60000);v.splitRear=demo?62:telemetry.fresh('splitRear',10000);
         v.betaGate=betaEntry===page;
         if(page===P.stats){v.stats=telemetry.snapshot(demo);v.statsPage=statsPage;v.gauges=gauges.page(statsPage);v.slots=gauges.slots;v.edit=edit;}
         else if(page===P.controls){

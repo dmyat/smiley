@@ -234,6 +234,24 @@ async function run(){
   assert.equal(pressureState(2.5,2.5),'ok');assert.equal(pressureState(2.0,2.5),'low');assert.equal(pressureState(2.3,2.5),'off');assert.equal(pressureState(3.0,2.5),'off');assert.equal(pressureState(2.5,null),null);
   const spec=JSON.parse(fs.readFileSync(path.join(__dirname,'../apps/smiley/app.json'),'utf8'));assert.deepStrictEqual(Object.keys(spec.signals['de.bmw.infotainment.vehicle.TPMS']).sort(),['_optional','statusTargetTyrePressure','statusTyrePressure','statusTyreTemperature']);
  });
+ await test('Warm-up: minutes to warm, a rev limit that climbs with the oil, and a turbo cool-down after hard driving',async()=>{
+  const {Warm}=require(path.join(APP,'warm'));let w=new Warm(),t=0;
+  assert.deepStrictEqual(w.view(),{minutes:null,limit:null,redline:7000,cool:null});
+  w.sample({rpm:800,oil:20,speed:0},t);assert.equal(w.view().limit,3500,'cold: the cold limit');assert(Math.abs(w.view().minutes-65/1.5)<0.01,'typical idle rate before anything is measured');
+  // oil warming 6 deg C a minute for three minutes: the measured rate takes over
+  for(let i=1;i<=180;i++){t+=1000;w.sample({rpm:2000,oil:20+i*0.1,speed:60,torque:80},t);}
+  let v=w.view();assert(Math.abs(v.minutes-(85-38)/6)<0.3,'minutes '+v.minutes);assert(v.limit>3500&&v.limit<7000&&v.limit%100===0,'limit '+v.limit);
+  w.sample({rpm:2000,oil:90,speed:60},t+=1000);v=w.view();assert.equal(v.minutes,null);assert.equal(v.limit,7000);assert.equal(v.cool,null);
+  w.sample({rpm:0,oil:40},t+=1000);assert.equal(w.view().minutes,null,'engine off: no estimate');
+  // 20 s of hard driving asks for 30 + 20 x 3 = 90 s of gentle driving
+  w=new Warm();t=1000;w.sample({rpm:5000,oil:100},t);for(let i=0;i<20;i++)w.sample({rpm:5000,oil:100},t+=1000);
+  assert.equal(w.view().cool.state,'cooling');assert.equal(w.view().cool.left,90);
+  for(let i=0;i<30;i++)w.sample({rpm:1500,oil:100},t+=1000);assert.equal(w.view().cool.left,60);
+  for(let i=0;i<60;i++)w.sample({rpm:900,oil:100},t+=1000);assert.equal(w.view().cool.state,'done');
+  for(let i=0;i<22;i++)w.sample({rpm:900,oil:100},t+=1000);assert.equal(w.view().cool,null,'all clear 20 s later');
+  // a short burst asks for nothing
+  w=new Warm();t=1000;w.sample({rpm:5000},t);for(let i=0;i<5;i++)w.sample({rpm:5000},t+=1000);w.sample({rpm:1000},t+=1000);assert.equal(w.view().cool,null);
+ });
  await test('Live horsepower is the engine computer\'s torque times engine speed, with its own highest value',async()=>{
   let now=1e6;const t=new Telemetry(ctx(),new Session(),()=>now);
   const d=t.snapshot(true);assert(Math.abs(d.power-d.torque*d.rpm/7120.91)<1e-6);assert(d.power>20&&d.power<400,'demo: '+d.power);assert(d.peaks.power&&d.peaks.power.max>=d.power-1e-6);

@@ -127,6 +127,16 @@ class Telemetry {
                 statusTargetTyrePressure: (s) => this.tyres.onTarget(s),
                 statusTyreTemperature: (s) => this.tyres.onTemperature(s),
             }, 10000).catch((e) => this.ctx.log.info('tyres: no TPMS signals (' + String(e && e.message || e) + ')')),
+            // gearbox oil temperature and the xDrive torque split, from the car's own data set (scaling as the
+            // kit's M Vitals app). A car that does not fill a field sends 0 or its invalid value: no data then.
+            watch('de.bmw.infrastructure.analytics.BasicDataSet', {
+                basicDataSet: (s) => {
+                    this.scaled('gearboxOil', s && s.valueTemperatureTransmissionOil, 1, -48, 255);
+                    const q = s && s.qualifierValueDistributionLongitudinalTorqueRearAxisFrontAxis, raw = s && s.valueDistributionLongitudinalTorqueRearAxisFrontAxis;
+                    const ok = q === undefined || q === null || q === 2 || q === 10 || q === 'SIGNALWERT_IST_GUELTIG' || q === 'SIGNALWERT_IST_GUELTIG__REKALIBRIERUNGSBEDARF';
+                    if (ok && typeof raw === 'number' && raw > 0 && raw < 65535 && raw * 0.01 <= 100) this.put('splitRear', raw * 0.01);
+                },
+            }).catch(() => null),
             watch('de.bmw.infotainment.vehicle.Vehicle', {
                 statusNewCurrentUnitsStatusExt: (s) => this.tyres.onUnits(s),
             }).catch(() => null),
