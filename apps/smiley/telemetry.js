@@ -2,6 +2,7 @@
 // Scaling and DID candidates derived from upstream car.js, M Vitals and Live Data.
 const { DidReader } = require('./kit/dids');
 const { split } = require('./kit/sgbd');
+const { Tyres } = require('./tyres');
 const Car = require('./kit/car');
 const Sim = require('./kit/sim');
 const fs = require('fs');
@@ -44,6 +45,7 @@ class Telemetry {
         this.ctx = ctx; this.session = session; this.clock = clock || Date.now;
         this.values = {}; this.times = {}; this.fail = {}; this.next = {}; this.answered = {};
         this.reader = null; this.link = null; this.index = 0; this.quickTurn = 0;
+        this.tyres = new Tyres(this.clock);
         this.batch = {}; this.batchFails = 0; this.batchOff = false; this.batched = 0;          // see pollBatch()
         this.focus = null;           // the gauges on screen (ids), read fastest: setFocus()
         // selector position per source: 'P' | 'R' | 'N' | 'D', or null when that source cannot tell
@@ -118,6 +120,16 @@ class Telemetry {
             watch('de.bmw.infrastructure.VehicleCondition', {
                 VehicleCondition: (s) => { const n = conditionOf(s && s.statusConditionVehicle); if (n !== undefined) this.live.condition = n; },
             }),
+            // tyre pressures, targets and temperatures (tyres.js): read only; also re-read every 10 s, as a
+            // car may not notify them. A unit without the interface simply shows no tyre numbers.
+            watch('de.bmw.infotainment.vehicle.TPMS', {
+                statusTyrePressure: (s) => this.tyres.onPressure(s),
+                statusTargetTyrePressure: (s) => this.tyres.onTarget(s),
+                statusTyreTemperature: (s) => this.tyres.onTemperature(s),
+            }, 10000).catch((e) => this.ctx.log.info('tyres: no TPMS signals (' + String(e && e.message || e) + ')')),
+            watch('de.bmw.infotainment.vehicle.Vehicle', {
+                statusNewCurrentUnitsStatusExt: (s) => this.tyres.onUnits(s),
+            }).catch(() => null),
             // longitudinal / lateral acceleration at the centre of gravity, in g (kit/car.js scaling)
             watch('de.bmw.infotainment.vehicle.CDS2', {
                 statusLongitudinalAccelerationMassCenter: (s) => this.accel('gLong', s && s.longitudinalAccelerationCentreOfGravity),

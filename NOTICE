@@ -22,3 +22,7 @@ tune files, license keys or credentials are included.
 
 The app's lettering is Inter (The Inter Project Authors), SIL Open Font License 1.1:
 see kit/runtime/fonts/OFL-Inter.txt.
+
+Tyre pressure monitor signals (apps/smiley/tyres.js): the signal names, scaling and
+unit handling follow the M Vitals app (apps/car_vitals) of cauliflowermossgrape/idrive7-apps,
+MIT License, Copyright (c) 2026 cauliflowermossgrape.

@@ -2,7 +2,7 @@
   "id": "smiley",
   "title": "PERFORMANCE",
   "description": "Live engine gauges, tune map switching, exhaust control, fault codes for the engine or the whole car, drag timer, G-meter, dyno and brake test.",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "vendor": "David Myat",
   "loggingId": "SMI1",
   "iconGlyph": "gauge",
@@ -33,6 +33,16 @@
     "de.bmw.infotainment.drivingexcitement.FES": {
       "_optional": "engine torque, the virtual dyno's comparison line",
       "statusActualValueTorque2": "rs"
+    },
+    "de.bmw.infotainment.vehicle.TPMS": {
+      "_optional": "tyre pressures and temperatures on the Car view",
+      "statusTyreTemperature": "rs",
+      "statusTyrePressure": "rs",
+      "statusTargetTyrePressure": "rs"
+    },
+    "de.bmw.infotainment.vehicle.Vehicle": {
+      "_optional": "the car's display units, for the tyre readings",
+      "statusNewCurrentUnitsStatusExt": "rs"
     },
     "de.bmw.infotainment.vehicle.CDS2": {
       "_optional": "G-meter, virtual dyno and brake test",

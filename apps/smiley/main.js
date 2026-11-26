@@ -172,7 +172,7 @@ mgu.run({async start(ctx){
         const demo=settings.get('demo')==='on';
         const v={page,demo,theme:settings.get('theme'),surprises:settings.get('surprises'),gaugeStyle:settings.get('gaugeStyle'),custom:{a:settings.get('customA'),b:settings.get('customB'),bg:settings.get('customBg')},paused:session.paused,busy:session.busy||refreshPending,notice,version:ctx.spec.version,
             tempUnit:settings.get('tempUnit'),pressUnit:settings.get('pressUnit'),torqueUnit:settings.get('torqueUnit')};
-        v.tyres=demo?{fl:{p:2.48,t:31},fr:{p:2.48,t:32},rl:{p:2.62,t:34},rr:{p:2.62,t:33}}:null;v.tyreHints=tyreHints;          // no tyre reading from the car yet: see tyreScan
+        v.tyres=demo?{fl:{p:2.48,target:2.5,t:31},fr:{p:2.48,target:2.5,t:32},rl:{p:2.62,target:2.7,t:34},rr:{p:2.25,target:2.7,t:33}}:telemetry.tyres.view();v.tyreHints=tyreHints;          // from the car's tyre pressure monitor (tyres.js)
         v.big=big;v.layout=settings.get('statsLayout');v.splash=settings.get('splash')==='off'?null:Date.now()-splashAt;
         v.oilC=demo?101:telemetry.fresh('oil',30000);          // the warm-up light in the header
         v.betaGate=betaEntry===page;

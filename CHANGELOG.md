@@ -2,6 +2,15 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.2.8
+
+- **Real tyre pressures and temperatures on Car view.** They come from the
+  car's own tyre pressure monitor and are shown in your units, whatever unit
+  the car itself is set to. A tyre well under the car's target pressure turns
+  red, one a little off turns amber. Read only: nothing is sent to the car.
+  The signal names and scaling come from the M Vitals app of the idrive7-apps
+  kit (MIT), credited in NOTICE.
+
 ## 0.2.7
 
 - **Live horsepower gauge.** A new Live Stats gauge shows horsepower as you

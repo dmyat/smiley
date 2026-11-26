@@ -214,6 +214,26 @@ async function run(){
   const off=old.slice();off[10]='lpfp';off[14]='load';fs.writeFileSync(path.join(dir,'gauges.json'),JSON.stringify({slots:off}));const up2=new GaugeLayout(dir,quiet).slots;
   assert.deepStrictEqual(up2.slice(0,16),off,'with engine load not on a page nothing moves');assert.equal(up2[16],'power');
  });
+ await test('Tyres: pressures and temperatures come out in bar and deg C whatever unit the car is set to',async()=>{
+  const {Tyres,pressureState}=require(path.join(APP,'tyres'));let now=1e6;
+  const P=(a,b,c,d)=>({actualValuePressureTyreFLH:a,actualValuePressureTyreFRH:b,actualValuePressureTyreRLH:c,actualValuePressureTyreRRH:d});
+  const TT=(a,b,c,d)=>({actualValueTemperatureTyreFLH:a,actualValueTemperatureTyreFRH:b,actualValueTemperatureTyreRLH:c,actualValueTemperatureTyreRRH:d});
+  const TG=(a,b,c,d)=>({targetPressureTyreFLH:a,targetPressureTyreFRH:b,targetPressureTyreRLH:c,targetPressureTyreRRH:d});
+  const near=(a,b,e)=>assert(Math.abs(a-b)<(e||0.01),a+' vs '+b);
+  let t=new Tyres(()=>now);assert.equal(t.view(),null,'nothing from the car: no numbers');
+  // a car set to psi and deg F, units signal seen: 36.0 psi, 82 deg F
+  t.onUnits({unitOfMeasurementAirPressure:3,unitOfMeasurementTemperature:2});t.onPressure(P(360,361,380,65535));t.onTarget(TG(350,350,390,390));t.onTemperature(TT(122,122,124,65535));
+  let v=t.view();near(v.fl.p,36/14.5038);near(v.rl.p,38/14.5038);assert.equal(v.rr.p,null,'an invalid tyre is no data, not a number');near(v.fl.t,(82-32)*5/9,0.05);assert.equal(v.rr.t,null);near(v.fl.target,35/14.5038);
+  // the same car before the units signal arrives: told from the values
+  t=new Tyres(()=>now);t.onPressure(P(360,360,380,380));t.onTemperature(TT(122,122,124,124));v=t.view();near(v.fl.p,36/14.5038);near(v.fl.t,(82-32)*5/9,0.05);
+  // bar and deg C; kPa
+  t=new Tyres(()=>now);t.onUnits({unitOfMeasurementAirPressure:1,unitOfMeasurementTemperature:1});t.onPressure(P(25,25,27,27));t.onTemperature(TT(71,71,74,74));v=t.view();near(v.fl.p,2.5);assert.equal(v.fl.t,31);assert.equal(v.fl.target,null);
+  t=new Tyres(()=>now);t.onPressure(P(2500,2500,2700,2700));near(t.view().rl.p,2.7);
+  t.onPressure(P(0,0,0,0));assert.equal(t.view().fl.p,null,'a pressure of 0 is not shown');
+  t.onPressure(P(2500,2500,2700,2700));now+=121000;assert.equal(t.view(),null,'readings older than two minutes are dropped');
+  assert.equal(pressureState(2.5,2.5),'ok');assert.equal(pressureState(2.0,2.5),'low');assert.equal(pressureState(2.3,2.5),'off');assert.equal(pressureState(3.0,2.5),'off');assert.equal(pressureState(2.5,null),null);
+  const spec=JSON.parse(fs.readFileSync(path.join(__dirname,'../apps/smiley/app.json'),'utf8'));assert.deepStrictEqual(Object.keys(spec.signals['de.bmw.infotainment.vehicle.TPMS']).sort(),['_optional','statusTargetTyrePressure','statusTyrePressure','statusTyreTemperature']);
+ });
  await test('Live horsepower is the engine computer\'s torque times engine speed, with its own highest value',async()=>{
   let now=1e6;const t=new Telemetry(ctx(),new Session(),()=>now);
   const d=t.snapshot(true);assert(Math.abs(d.power-d.torque*d.rpm/7120.91)<1e-6);assert(d.power>20&&d.power<400,'demo: '+d.power);assert(d.peaks.power&&d.peaks.power.max>=d.power-1e-6);
