@@ -6,7 +6,7 @@
 
 **Your BMW's engine, tune, faults and performance timers, on the car's own screen.**
 
-An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.2.9 &nbsp;·&nbsp; by David Myat
+An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.2.10 &nbsp;·&nbsp; by David Myat
 
 [Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#ten-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
 
@@ -22,8 +22,8 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.2.9 &nbsp;·&nb
 
 What changed in each version: [release notes](CHANGELOG.md).
 
-Five tabs across the top of the screen in version 0.2.9: Live Stats, Perf,
-Tune, Faults and Info. **AWD / 2WD, Phone, Connect and Flash are switched off
+Six tabs across the top of the screen in version 0.2.10: Live Stats, AWD / 2WD,
+Perf, Tune, Faults and Info. **Phone, Connect and Flash are switched off
 for now**; their sections below describe what they do if they return. The
 screenshots come from the simulation, with demo data.
 
@@ -92,10 +92,9 @@ and a tap on any reading opens it in big number mode.
 Switches xDrive off, so the car drives the rear wheels only, and shows what
 the car reports back. A checklist tells you when it is safe to switch.
 
-**Switched off since 0.2.6.** A rear driveshaft broke on hard launches with
-the car in 2WD, where the rear axle takes all of the engine's torque. The tab
-and its setting are hidden, and the app sends nothing to the stability
-control unit.
+**Back since 0.2.10**, off until you turn on "AWD / 2WD switch" in Settings.
+In 2WD the rear axle takes all of the engine's torque: a rear driveshaft broke
+on hard launches in 2WD, so no hard launches in this mode.
 
 </td>
 <td width="55%"><img src="docs/screenshots/awd-2wd.png" alt="AWD / 2WD tab"></td>
@@ -296,8 +295,8 @@ thing that looks wrong.**
 
 **What to know**
 
-- **AWD / 2WD is switched off.** In 2WD the rear driveshaft, axles and
-  differential carry all of the torque, and a hard launch broke a driveshaft.
+- **No hard launches in 2WD.** The rear driveshaft, axles and differential
+  carry all of the torque, and a hard launch broke a driveshaft.
 - **Clearing faults erases them.** Read the codes first.
 - **The dyno is an estimate** from the weight and drivetrain loss set in
   Settings, not a dyno reading.

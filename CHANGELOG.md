@@ -2,6 +2,12 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.2.10
+
+- **AWD / 2WD tab is back.** It stays off until you turn on "AWD / 2WD
+  switch" in Settings. The page now says every time: in 2WD the rear axle
+  takes all the torque, so no hard launches.
+
 ## 0.2.9
 
 - **Warm-up timer.** Beside the warm-up light: about how many minutes until

@@ -390,11 +390,11 @@ async function run(){
   const spec=JSON.parse(fs.readFileSync(path.join(__dirname,'../apps/smiley/app.json'),'utf8')), all=JSON.stringify(spec);
   assert(all.includes('"key":"splash"')||all.includes('"key": "splash"'));
  });
- await test('The shipped build has five tabs: AWD / 2WD is switched off, with no setting to bring it back',async()=>{
+ await test('The shipped build has six tabs: AWD / 2WD is back, off until its setting is turned on',async()=>{
   const U=require(path.join(APP,'ui'));
-  assert.deepStrictEqual(U.TABS,['Live Stats','Perf','Tune','Faults','Info']);assert.equal(U.PAGE.xdrive,-1);
+  assert.deepStrictEqual(U.TABS.slice().sort(),['AWD / 2WD','Faults','Info','Live Stats','Perf','Tune']);assert(U.PAGE.xdrive>=0);
   const spec=JSON.parse(fs.readFileSync(path.join(__dirname,'../apps/smiley/app.json'),'utf8'));
-  assert(!spec.settings.some((x)=>x.key==='xdrive'));assert(!/2WD/.test(spec.description));
+  assert.equal(spec.settings.filter((x)=>x.key==='xdrive')[0].default,'off');
  });
  console.log(passed+' SMILEY integration checks passed. No vehicle connected.');
 }
