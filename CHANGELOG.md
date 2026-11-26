@@ -2,6 +2,11 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.3.3
+
+- **New logo.** The Christmas one: the car in a Santa hat, with snow and holly.
+  It is the app's icon in the car and the logo on this page.
+
 ## 0.3.2
 
 - **AI key from your phone.** On the AI tab press Use my phone (QR), join the

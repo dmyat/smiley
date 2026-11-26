@@ -1,12 +1,12 @@
 <div align="center">
 
-<img src="docs/logo.png" width="170" alt="SMILEY logo: a white car seen from the front above the word SMILEY">
+<img src="docs/logo.png" width="170" alt="SMILEY logo: a white car seen from the front wearing a Santa hat, above the word SMILEY, with snow and holly">
 
 # SMILEY
 
 **Your BMW's engine, tune, faults and performance timers, on the car's own screen.**
 
-An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.3.2 &nbsp;·&nbsp; by David Myat
+An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.3.3 &nbsp;·&nbsp; by David Myat
 
 [Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#ten-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
 
@@ -22,7 +22,7 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.3.2 &nbsp;·&nb
 
 What changed in each version: [release notes](CHANGELOG.md).
 
-Seven tabs across the top of the screen in version 0.3.2: Live Stats, AWD / 2WD,
+Seven tabs across the top of the screen in version 0.3.3: Live Stats, AWD / 2WD,
 Perf, Tune, Faults, AI and Info. **Phone, Connect and Flash are switched off
 for now**; their sections below describe what they do if they return. The
 screenshots come from the simulation, with demo data.
