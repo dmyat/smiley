@@ -10,7 +10,7 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.3.0 &nbsp;·&nb
 
 [Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#ten-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
 
-<img src="docs/screenshots/live-stats.png" alt="Live Stats: six engine gauges, signal bars for the fast readings and dials for the rest">
+<img src="docs/screenshots/slash.png" alt="Live Stats in the Slash look: the gear on a red slab, six readings beside it">
 
 </div>
 
@@ -34,6 +34,11 @@ screenshots come from the simulation, with demo data.
 
 ### Live Stats
 
+A new install opens on the **Slash** screen shown at the top of this page:
+the gear as tall as the screen, with engine speed, horsepower, boost, torque,
+oil and coolant beside it and the revs as one slanted bar. The Layout button
+steps on to the six-gauge page described here and the other layouts.
+
 Two pages of six gauges, three across and two down. The fast readings (RPM,
 boost, boost target, engine load and torque) are signal bars that light up
 green to red like a phone's signal meter; the rest are round dials with a thick band and their lowest and highest value beside
@@ -54,6 +59,11 @@ scale. Tap anywhere to go back.
 blue while the engine is cold, amber while it warms up, green once it is
 ready.
 
+**Warm-up timer and turbo cool-down.** Beside the warm-up light the header
+shows about how many minutes until the oil is warm and the revs to keep under
+until then. After hard driving it counts down how long to drive gently before
+switching off.
+
 **Smoother gauges.** The fast gauges on screen are asked for together in one
 request, so each one is refreshed more often. If the car does not answer that
 way, the app goes back to asking one at a time by itself.
@@ -65,10 +75,13 @@ way, the app goes back to asking one at a time by itself.
 
 ### Live Stats layouts
 
-Settings → Live Stats layout offers four more ways to see the same readings.
-The six gauges are the default and their page is unchanged. In the other
-layouts a Layout button steps on to the next one and back to the six gauges,
-and a tap on any reading opens it in big number mode.
+Settings → Live Stats layout offers six ways to see the same readings. Slash
+is the default since 0.3.0. A Layout button steps through them in turn (the
+six-gauge page has none: pick another layout in Settings to leave it), and a
+tap on any reading opens it in big number mode.
+
+- **Slash**: the gear on a red slab, six readings and a slanted rev bar.
+- **Six gauges**: the two pages of gauges described above.
 
 - **Cockpit**: one large RPM ring with boost inside it and four readings
   around it.
@@ -76,7 +89,9 @@ and a tap on any reading opens it in big number mode.
 - **Graph view**: the last 30 seconds of each reading as a line.
 - **Car view**: the readings around a top view of a car, with each tyre's
   pressure and temperature, read from the car's own tyre pressure monitor. A
-  tyre well under the car's target pressure turns red.
+  tyre well under the car's target pressure turns red. It also shows the
+  xDrive front and rear torque split and the gearbox oil temperature when the
+  car sends them.
 
 <img src="docs/screenshots/layouts.png" alt="The four extra layouts: Cockpit, Race dash, Graph view and Car view">
 
@@ -197,9 +212,10 @@ switch it off).
 
 ## Ten looks
 
-Pick one under Settings → Theme. Nine are ready-made; the tenth is yours.
-**Christmas Green** is the theme a new install starts with for now, and
-**Christmas Red** is its cranberry-and-gold twin. Both add gently
+Pick one under Settings → Theme. Ten are ready-made; the eleventh is yours.
+**Slash**, racing red cut across black with slanted tabs in the top right
+corner, is the theme a new install starts with since 0.3.0. The tour's
+screenshots show it. **Christmas Green** and **Christmas Red** add gently
 falling snow and, now and then, a small surprise in the empty strip at the
 bottom of Live Stats, Perf and Info: Santa's sleigh, a shooting star, or a
 snowman who peeks up and waves. They never cover a gauge, a button or text,
@@ -207,13 +223,13 @@ and can be switched off under Settings → Christmas surprises. The snow and
 surprises move only with Graphics set to Smooth (GPU); on Basic the theme
 keeps its colours and stays still.
 
-<img src="docs/screenshots/themes.png" alt="The eight themes side by side on the Live Stats page">
+<img src="docs/screenshots/themes.png" alt="Eight of the older themes side by side on the Live Stats page">
 
 | | | | |
 |---|---|---|---|
-| Noir & Champagne | Burgundy & Gold | Amethyst & Gold | Midnight & Gold |
-| Racing Green | Motorsport | Spider Red & Blue | Christmas Green (snow) |
-| Christmas Red (snow) | **Custom** | | |
+| **Slash** (default) | Noir & Champagne | Burgundy & Gold | Amethyst & Gold |
+| Midnight & Gold | Racing Green | Motorsport | Spider Red & Blue |
+| Christmas Green (snow) | Christmas Red (snow) | **Custom** | |
 
 **Custom** builds a theme from three choices in Settings: a main colour, a
 second colour and a background. Twelve colours and four backgrounds give 576
