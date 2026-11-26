@@ -8,7 +8,7 @@
 
 An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.3.3 &nbsp;·&nbsp; by David Myat
 
-[Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#ten-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
+[The tabs](#the-tabs) &nbsp;·&nbsp; [Themes](#themes) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
 
 <img src="docs/screenshots/slash.png" alt="Live Stats in the Slash look: the gear on a red slab, six readings beside it">
 
@@ -18,267 +18,77 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.3.3 &nbsp;·&nb
 > Everything else is checked on a computer simulation of the head unit.
 > [Read this first](#read-this-first) before you install.
 
-## The tour
+## The tabs
 
-What changed in each version: [release notes](CHANGELOG.md).
-
-Seven tabs across the top of the screen in version 0.3.3: Live Stats, AWD / 2WD,
-Perf, Tune, Faults, AI and Info. **Phone, Connect and Flash are switched off
-for now**; their sections below describe what they do if they return. The
-screenshots come from the simulation, with demo data.
-
-<table>
-<tr>
-<td width="55%"><img src="docs/screenshots/live-stats.png" alt="Live Stats tab"></td>
-<td>
+Seven tabs: Live Stats, AWD / 2WD, Perf, Tune, Faults, AI and Info. Settings
+is the last tab in the car's own strip. What changed in each version is in the
+[release notes](CHANGELOG.md). The screenshots come from the simulation, with
+demo data.
 
 ### Live Stats
 
-A new install opens on the **Slash** screen shown at the top of this page:
-the gear as tall as the screen, with engine speed, horsepower, boost, torque,
-oil and coolant beside it and the revs as one slanted bar. The Layout button
-steps on to the six-gauge page described here and the other layouts.
+Opens on the **Slash** screen at the top of this page: the gear, six readings
+and a rev bar. The Layout button steps through five more layouts:
 
-Two pages of six gauges, three across and two down. The fast readings (RPM,
-boost, boost target, engine load and torque) are signal bars that light up
-green to red like a phone's signal meter; the rest are round dials with a thick band and their lowest and highest value beside
-them. The temperatures run blue when cold to red when hot. Settings → Live
-Stats gauges switches everything to dials or to bars. Sixteen readings
-are available: RPM, boost, oil, coolant and intake temperature, fuel trims,
-fuel pressures, timing, lambda, oil pressure, boost target, load, torque and
-misfires. Twelve are on the pages; the other four wait in the pick list.
+- **Six gauges**: two pages of gauges you choose from 17 readings. Press and
+  hold a gauge to change what it shows.
+- **Cockpit**, **Race dash** and **Graph view**: the same readings as a ring,
+  rising bars, or 30-second lines.
+- **Car view**: a top view of the car with each tyre's pressure and
+  temperature, the xDrive torque split and the gearbox oil temperature.
 
-Press and hold a gauge, or tap Edit gauges and then a gauge, and choose from
-the list what that place shows.
+Tap any reading to make it fill the page. The header shows a warm-up light,
+the minutes until the oil is warm with the revs to keep under, and a turbo
+cool-down countdown after hard driving.
 
-**Big number mode.** Tap any gauge and it fills the page: one very large
-number, its lowest and highest so far, and a bar showing where it sits on its
-scale. Tap anywhere to go back.
-
-**Warm-up light.** Top right on every tab, from the engine oil temperature:
-blue while the engine is cold, amber while it warms up, green once it is
-ready.
-
-**Warm-up timer and turbo cool-down.** Beside the warm-up light the header
-shows about how many minutes until the oil is warm and the revs to keep under
-until then. After hard driving it counts down how long to drive gently before
-switching off.
-
-**Smoother gauges.** The fast gauges on screen are asked for together in one
-request, so each one is refreshed more often. If the car does not answer that
-way, the app goes back to asking one at a time by itself.
-
-</td>
-</tr>
-<tr>
-<td colspan="2">
-
-### Live Stats layouts
-
-Settings → Live Stats layout offers six ways to see the same readings. Slash
-is the default since 0.3.0. A Layout button steps through them in turn (the
-six-gauge page has none: pick another layout in Settings to leave it), and a
-tap on any reading opens it in big number mode.
-
-- **Slash**: the gear on a red slab, six readings and a slanted rev bar.
-- **Six gauges**: the two pages of gauges described above.
-
-- **Cockpit**: one large RPM ring with boost inside it and four readings
-  around it.
-- **Race dash**: rev bars that rise like a signal meter, and five big numbers.
-- **Graph view**: the last 30 seconds of each reading as a line.
-- **Car view**: the readings around a top view of a car, with each tyre's
-  pressure and temperature, read from the car's own tyre pressure monitor. A
-  tyre well under the car's target pressure turns red. It also shows the
-  xDrive front and rear torque split and the gearbox oil temperature when the
-  car sends them.
-
-<img src="docs/screenshots/layouts.png" alt="The four extra layouts: Cockpit, Race dash, Graph view and Car view">
-
-<img src="docs/screenshots/big-number.png" width="60%" alt="Big number mode showing boost across the whole page">
-
-</td>
-</tr>
-<tr>
-<td>
+<img src="docs/screenshots/live-stats.png" alt="Live Stats, six gauges layout">
 
 ### AWD / 2WD
 
-Switches xDrive off, so the car drives the rear wheels only, and shows what
-the car reports back. A checklist tells you when it is safe to switch.
-
-**Back since 0.2.10**, off until you turn on "AWD / 2WD switch" in Settings.
-In 2WD the rear axle takes all of the engine's torque: a rear driveshaft broke
-on hard launches in 2WD, so no hard launches in this mode.
-
-</td>
-<td width="55%"><img src="docs/screenshots/awd-2wd.png" alt="AWD / 2WD tab"></td>
-</tr>
-<tr>
-<td width="55%"><img src="docs/screenshots/perf.png" alt="Perf tab with the drag timer and the History button"></td>
-<td>
+Switches xDrive off so the car drives the rear wheels only, and shows what the
+car reports back. Off until you turn on "AWD / 2WD switch" in Settings. In 2WD
+the rear axle takes all of the torque: **no hard launches**.
 
 ### Perf
 
-Four tools that only read: a drag timer (0-60, 60-130, quarter mile), a
-G-meter, a dyno graph of power and torque after each pull, and a brake test.
-A History page lists every drag run, dyno pull and stop of the last 30 days;
-each entry is deleted by itself when it is 30 days old.
+A drag timer (0-60, 60-130, quarter mile), a G-meter, a dyno graph after each
+pull and a brake test. History keeps every run for 30 days.
 
-</td>
-</tr>
-<tr>
-<td>
+<img src="docs/screenshots/perf.png" alt="Perf tab with the drag timer">
 
 ### Tune
 
-Switches between the maps of an MHD or bootmod3 tune that is already on the
-car, and opens, closes or releases the exhaust flap.
-
-It does not flash a tune. Pause SMILEY keeps it out of the way while your
-tuning app does.
-
-</td>
-<td width="55%"><img src="docs/screenshots/tune.png" alt="Tune tab"></td>
-</tr>
-<tr>
-<td width="55%"><img src="docs/screenshots/faults.png" alt="Faults tab"></td>
-<td>
+Switches between the maps of an MHD or bootmod3 tune already on the car, and
+opens or closes the exhaust flap. It does not flash a tune.
 
 ### Faults
 
-Reads and clears fault codes for the engine or for every module in the car,
-with a plain description of each code where the database has one.
-
-Clearing needs the car in Park and two presses.
-
-</td>
-</tr>
-<tr>
-<td>
-
-### Phone (switched off for now)
-
-Live gauges in a phone browser over the car's Wi-Fi. View only: the phone
-cannot control the car.
-
-Needs the SMILEY Phone Access helper, listed under the same Store source.
-
-</td>
-<td width="55%"><img src="docs/screenshots/phone.png" alt="Phone tab"></td>
-</tr>
-<tr>
-<td width="55%"><img src="docs/screenshots/connect-flash/smiley-connect.png" alt="Connect beta with a fictional ECU"></td>
-<td>
-
-### Connect (beta, switched off for now)
-
-A dedicated DoIP connection for ECU identification, plus an offline demo ECU.
-Requires a vehicle-specific connection setup for real diagnostics. A beta
-warning appears before the controls each time you enter this tab.
-
-</td>
-</tr>
-<tr>
-<td>
-
-### Flash (beta, switched off for now)
-
-Calibration-file checks, matching the file to the ECU, two-step confirmation,
-and acknowledged transfer progress. The full workflow runs against the demo ECU.
-
-**Not tested on a car. Live ECU flashing stays locked:** no verified BMW
-programming adapter is included. A separate warning appears every time you enter.
-
-</td>
-<td width="55%"><img src="docs/screenshots/connect-flash/smiley-flash-ready.png" alt="Flash beta with a fictional calibration"></td>
-</tr>
-<tr>
-<td width="55%"><img src="docs/screenshots/info.png" alt="Info tab"></td>
-<td>
+Reads and clears fault codes for the engine or the whole car, with a plain
+description where the database has one. Clearing needs Park and two presses.
 
 ### AI
 
-Ask an AI assistant about the car from the car's screen: four ready-made
-questions (explain my fault codes, are my temperatures OK, is my boost
-healthy, what to check before a hard drive) or type your own on the app's
-touch keyboard. Each question goes out with a short summary of the live
-readings and the fault codes last read. The VIN is never sent.
+Ask an AI assistant about the car: four ready-made questions or your own. It
+needs your own API key (Anthropic or OpenAI, billed to you by use) and
+internet in the car. Send the key from your phone with the QR code, or type it
+on the screen; it is saved on the head unit only. Each question goes out with
+the live readings and the fault codes last read, never the VIN. Chat only: it
+cannot run anything or change the car, and answers can be wrong.
 
-It needs **your own API key** from Anthropic (Claude) or OpenAI, billed to
-you by use, and **internet in the car** (Wi-Fi or a phone hotspot). The key is
-entered once, either from your phone (scan the QR code on the car screen and
-paste the key; needs the Phone Access helper) or typed on the car screen, and
-saved on the head unit only. Chat only: it answers
-questions and cannot run anything or change the car. Answers can be wrong.
-
-<img src="docs/screenshots/ai.png" alt="AI tab: the touch keyboard for entering the API key">
+<img src="docs/screenshots/ai.png" alt="AI tab: the touch keyboard for the API key">
 
 ### Info
 
-The car's VIN, the engine computer's type, hardware and software numbers,
-the tune found, the app version and the maker's Instagram. Read when the app
-starts.
+The VIN, the engine computer's numbers, the tune found and the app version.
 
-When the app opens, a short start-up animation plays once (Settings can
-switch it off).
+## Themes
 
-</td>
-</tr>
-</table>
+Settings → Theme. **Slash** is the default. The others: Noir & Champagne,
+Burgundy & Gold, Amethyst & Gold, Midnight & Gold, Racing Green, Motorsport,
+Spider Red & Blue, Christmas Green and Christmas Red (both with falling snow),
+and **Custom**, built from a main colour, a second colour and a background.
 
-## Ten looks
-
-Pick one under Settings → Theme. Ten are ready-made; the eleventh is yours.
-**Slash**, racing red cut across black with slanted tabs in the top right
-corner, is the theme a new install starts with since 0.3.0. The tour's
-screenshots show it. **Christmas Green** and **Christmas Red** add gently
-falling snow and, now and then, a small surprise in the empty strip at the
-bottom of Live Stats, Perf and Info: Santa's sleigh, a shooting star, or a
-snowman who peeks up and waves. They never cover a gauge, a button or text,
-and can be switched off under Settings → Christmas surprises. The snow and
-surprises move only with Graphics set to Smooth (GPU); on Basic the theme
-keeps its colours and stays still.
-
-<img src="docs/screenshots/themes.png" alt="Eight of the older themes side by side on the Live Stats page">
-
-| | | | |
-|---|---|---|---|
-| **Slash** (default) | Noir & Champagne | Burgundy & Gold | Amethyst & Gold |
-| Midnight & Gold | Racing Green | Motorsport | Spider Red & Blue |
-| Christmas Green (snow) | Christmas Red (snow) | **Custom** | |
-
-**Custom** builds a theme from three choices in Settings: a main colour, a
-second colour and a background. Twelve colours and four backgrounds give 576
-combinations.
-
-## Connect and Flash beta
-
-> Both tabs are hidden in this version. The notes below apply when they are
-> switched back on (`HIDDEN` in `apps/smiley/ui.js`).
-
-This build merges Connect and Flash into the latest uploaded `smiley-MAIN`
-source, preserving the car logo, all eight themes, custom colours and existing
-features. The app version remains **0.1.2**. The new tabs follow the selected
-theme and custom colours automatically.
-
-To try them without contacting a car, turn **Demo data** on in Settings. Open
-**Connect**, acknowledge the warning and select **Connect demo**. Open **Flash**,
-acknowledge its warning, choose **Load demo file**, confirm **Simulated power**,
-then press **Simulate flash** and **Confirm flash**. The demo uses fictional
-ECU responses and writes nothing to the car.
-
-These additions are experimental and have only been tested in simulation.
-Connect is a DoIP client, not an MHD phone/Wi-Fi bridge. Live flashing requires
-ECU-specific programming support that is not included in this build.
-[Setup, limitations and test details](docs/CONNECT_FLASH.md).
-
-When updating the GitHub source, use the contents of the extracted
-`smiley-MAIN` folder as the repository root: `mgu-repo.json`, `apps`, `kit`,
-`native` and the other existing files belong at the top level. Uploading only
-the ZIP file does not replace the source code used by the Store. Because the
-version is kept at 0.1.2, a version-based updater may require an explicit
-reinstall/replacement rather than offering a newer version automatically.
+<img src="docs/screenshots/themes.png" alt="Eight of the themes side by side on the Live Stats page">
 
 ## Install
 
@@ -333,11 +143,10 @@ thing that looks wrong.**
 - **Clearing faults erases them.** Read the codes first.
 - **The dyno is an estimate** from the weight and drivetrain loss set in
   Settings, not a dyno reading.
-- **The Phone tab needs a helper.** The head unit's firewall blocks incoming
-  connections, and an app cannot change it. SMILEY Phone Access is a small
-  service that runs as root and opens TCP port 8765 on the car's Wi-Fi only
-  while the phone page is on. It has been tested against a pretend firewall
-  only, not on a car.
+- **Sending the AI key from a phone needs a helper.** SMILEY Phone Access,
+  from the same Store source, opens one port on the car's Wi-Fi while the
+  pairing page is on. It has not been tested on a car; typing the key on the
+  car screen needs nothing extra.
 - **Some readings are unconfirmed.** A gauge that shows dashes means the
   engine computer did not answer that reading.
 - **Use the performance tools on closed roads only.**
