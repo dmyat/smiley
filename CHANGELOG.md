@@ -2,6 +2,14 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.3.2
+
+- **AI key from your phone.** On the AI tab press Use my phone (QR), join the
+  car Wi-Fi, scan the code and paste the key on the page that opens. The page
+  only works with the one-time code in the QR, accepts one key, and switches
+  itself off when the key arrives or after ten minutes. It needs the Phone
+  Access helper from the Store. Typing the key on the car screen still works.
+
 ## 0.3.1
 
 - **New AI tab.** Ask an AI assistant about the car: four ready-made

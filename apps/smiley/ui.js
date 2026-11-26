@@ -873,14 +873,26 @@ function aiPage(cv,v,a) {
     const s=v.ai;
     if(v.aiKb){aiKeyboard(cv,v,a);return;}
     heading(cv,'AI',s.hasKey?s.provider+'  ·  '+s.model+'  ·  key '+s.keyHint:'Ask an AI about your car. Needs your own API key and internet in the car.');
+    if(!s.hasKey&&v.aiPair&&v.aiPair.running){
+        // pairing: the phone scans this code, opens the page and pastes the key there
+        card(cv,44,160,1512,290,16);
+        drawQr(cv,v.aiPair.url,69,182,246);
+        text(cv,'Send the key from your phone',350,212,26,THEME.accent2,{font:'bold'});
+        ['1.  Join the car Wi-Fi on your phone.','2.  Scan this code with the phone camera.','3.  Paste your API key on the page and press Send to the car.'].forEach((l,i)=>text(cv,l,350,258+i*38,21,THEME.text));
+        text(cv,'Turns itself off after 10 minutes, or as soon as the key arrives.',350,392,19,THEME.dim);
+        text(cv,'Needs the Phone Access helper, installed once from the Store.',350,422,18,THEME.dim);
+        button(cv,1216,376,304,'Stop',a.aiPair,'aiPair',true,false);
+        return;
+    }
     if(!s.hasKey){
         card(cv,44,160,1512,290,16);
         text(cv,'Set up once',76,212,26,THEME.accent2,{font:'bold'});
-        ['1.  Get an API key from your Anthropic (Claude) or OpenAI account. It is billed to you by use.','2.  Connect the car to Wi-Fi or your phone hotspot.','3.  Press Enter key and type it in. It is saved on this head unit only.']
+        ['1.  Get an API key from your Anthropic (Claude) or OpenAI account. It is billed to you by use.','2.  Connect the car to Wi-Fi or your phone hotspot.','3.  Send it from your phone with the QR code, or type it here. It is saved on this head unit only.']
             .forEach((l,i)=>text(cv,l,76,258+i*38,21,THEME.text));
         text(cv,'Chat only: it answers questions. It cannot run anything or change the car.',76,392,19,THEME.dim);
-        button(cv,1180,376,340,'Enter key',a.aiKey,'aiKey',true,false);
-        if(s.error)text(cv,s.error,76,432,19,THEME.warn);
+        button(cv,820,376,340,'Use my phone (QR)',a.aiPair,'aiPair',true,false);
+        button(cv,1180,376,340,'Type it here',a.aiKey,'aiKey',false,false);
+        if(s.error||(v.aiPair&&v.aiPair.error))text(cv,s.error||v.aiPair.error,76,432,19,THEME.warn);
         return;
     }
     s.presets.forEach((p,i)=>button(cv,44,160+i*62,430,p,()=>a.aiPreset(i),'aiPreset'+i,false,s.busy));
@@ -921,7 +933,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.3.1 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.3.2 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);

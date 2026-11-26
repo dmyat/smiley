@@ -6,7 +6,7 @@
 
 **Your BMW's engine, tune, faults and performance timers, on the car's own screen.**
 
-An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.3.1 &nbsp;·&nbsp; by David Myat
+An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.3.2 &nbsp;·&nbsp; by David Myat
 
 [Take the tour](#the-tour) &nbsp;·&nbsp; [Themes](#ten-looks) &nbsp;·&nbsp; [Connect / Flash beta](#connect-and-flash-beta) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
 
@@ -22,7 +22,7 @@ An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.3.1 &nbsp;·&nb
 
 What changed in each version: [release notes](CHANGELOG.md).
 
-Seven tabs across the top of the screen in version 0.3.1: Live Stats, AWD / 2WD,
+Seven tabs across the top of the screen in version 0.3.2: Live Stats, AWD / 2WD,
 Perf, Tune, Faults, AI and Info. **Phone, Connect and Flash are switched off
 for now**; their sections below describe what they do if they return. The
 screenshots come from the simulation, with demo data.
@@ -207,7 +207,9 @@ readings and the fault codes last read. The VIN is never sent.
 
 It needs **your own API key** from Anthropic (Claude) or OpenAI, billed to
 you by use, and **internet in the car** (Wi-Fi or a phone hotspot). The key is
-typed in once and saved on the head unit only. Chat only: it answers
+entered once, either from your phone (scan the QR code on the car screen and
+paste the key; needs the Phone Access helper) or typed on the car screen, and
+saved on the head unit only. Chat only: it answers
 questions and cannot run anything or change the car. Answers can be wrong.
 
 <img src="docs/screenshots/ai.png" alt="AI tab: the touch keyboard for entering the API key">
@@ -346,7 +348,7 @@ thing that looks wrong.**
 
 ```sh
 python3 kit/tools/build.py --preview-only smiley   # stage the app without the BMW SDK
-node tests/test-smiley.js                          # 56 integration checks
+node tests/test-smiley.js                          # 57 integration checks
 node tests/test-native-flow.js                     # the app on the head-unit stub
 node tests/test-edit-gauges.js                     # press-and-hold gauge editing
 node tests/test-phone-net.js                       # the phone access helper, against a pretend firewall

@@ -271,6 +271,21 @@ async function run(){
   assert.equal(c.host,'api.openai.com');assert.equal(c.h.authorization,'Bearer sk-proj-0123456789abcdefghijklmn');assert.equal(c.b.messages[0].role,'system');assert.equal(a.view().answer,'Fine.');
   a.forget();assert.equal(a.view().hasKey,false);assert(!fs.existsSync(path.join(dir,'ai.json')));
  });
+ await test('AI key from a phone: only with the one-time code, one key, then the page switches itself off',async()=>{
+  const {KeyPairing}=require(path.join(APP,'ai-pair'));const http=require('http');const got=[];
+  const kp=new KeyPairing((k)=>{got.push(k);return k.length>=20;},()=>'127.0.0.1');kp.port=18765;
+  assert.equal(kp.view().running,false);await kp.start();const v=kp.view();assert(/^http:\/\/127\.0\.0\.1:18765\/#[0-9a-f]{32}$/.test(v.url));const tok=v.url.split('#')[1];
+  const call=(method,p,headers,body)=>new Promise((res,rej)=>{const r=http.request({host:'127.0.0.1',port:18765,path:p,method,headers:headers||{}},(x)=>{let d='';x.on('data',(c)=>d+=c);x.on('end',()=>res({status:x.statusCode,body:d,headers:x.headers}));});r.on('error',rej);r.end(body);});
+  let r=await call('GET','/');assert.equal(r.status,200);assert(/Send to the car/.test(r.body));assert(!r.body.includes(tok),'the page does not carry the code');
+  r=await call('GET','/.smiley-health');assert.equal(r.headers['x-smiley-phone'],'1');
+  r=await call('GET','/api/key');assert.equal(r.status,404);
+  r=await call('POST','/api/key',{authorization:'Bearer '+'0'.repeat(32)},JSON.stringify({key:'sk-ant-0123456789abcdefghij'}));assert.equal(r.status,401);assert.equal(got.length,0,'a wrong code hands over nothing');
+  r=await call('POST','/api/key',{authorization:'Bearer '+tok},JSON.stringify({key:'short'}));assert.equal(r.status,400);
+  r=await call('POST','/api/key',{authorization:'Bearer '+tok},'x'.repeat(2000)).catch(()=>({status:0}));assert.notEqual(r.status,200,'an oversized body is dropped');
+  r=await call('POST','/api/key',{authorization:'Bearer '+tok},JSON.stringify({key:'sk-ant-0123456789abcdefghij'}));assert.equal(r.status,200);assert.equal(got[got.length-1],'sk-ant-0123456789abcdefghij');
+  await new Promise((d)=>setTimeout(d,500));assert.equal(kp.view().running,false,'off once the key has arrived');assert.equal(kp.view().done,true);
+  const none=new KeyPairing(()=>true,()=>null);await none.start().then(()=>assert.fail('no Wi-Fi: no page'),(e)=>assert(/Wi-Fi/.test(e.message)));
+ });
  await test('Live horsepower is the engine computer\'s torque times engine speed, with its own highest value',async()=>{
   let now=1e6;const t=new Telemetry(ctx(),new Session(),()=>now);
   const d=t.snapshot(true);assert(Math.abs(d.power-d.torque*d.rpm/7120.91)<1e-6);assert(d.power>20&&d.power<400,'demo: '+d.power);assert(d.peaks.power&&d.peaks.power.max>=d.power-1e-6);

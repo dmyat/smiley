@@ -1,6 +1,7 @@
 'use strict';
 const { Warm } = require('./warm');
 const { Assistant, PRESETS: AI_PRESETS } = require('./ai');
+const { KeyPairing } = require('./ai-pair');
 const mgu=require('./kit/mgu');
 const UI=require('./ui');
 const {Controller}=require('./controller');
@@ -99,7 +100,7 @@ mgu.run({async start(ctx){
     function setPage(i){
         if(flash.programming){page=P.flash;repaint();return;}
         betaEntry=i===P.connect||i===P.flash?i:null;
-        edit=null;big=null;aiKb=null;page=i;faults.cancelConfirm();flash.confirmUntil=0;notice='';repaint();
+        edit=null;big=null;aiKb=null;if(i!==P.ai)pairing.stop();page=i;faults.cancelConfirm();flash.confirmUntil=0;notice='';repaint();
     }
     const acts={
         tuner:(name)=>action(async()=>{
@@ -168,7 +169,8 @@ mgu.run({async start(ctx){
         }),
         betaContinue:()=>{betaEntry=null;notice='';repaint();},
         betaBack:()=>setPage(P.stats),
-        aiKey:()=>{aiKb={mode:'key',text:'',shift:false};repaint();},
+        aiPair:action(async()=>{if(pairing.server){pairing.stop();return;}if(phone.server)throw new Error('Stop phone access first');await pairing.start();}),
+        aiKey:()=>{pairing.stop();aiKb={mode:'key',text:'',shift:false};repaint();},
         aiType:()=>{aiKb={mode:'ask',text:'',shift:false};repaint();},
         aiK:(c)=>{if(aiKb&&aiKb.text.length<(aiKb.mode==='key'?240:300)){aiKb.text+=c;if(aiKb.mode==='ask')aiKb.shift=false;}repaint();},
         aiShift:()=>{if(aiKb)aiKb.shift=!aiKb.shift;repaint();},
@@ -187,6 +189,8 @@ mgu.run({async start(ctx){
         const fl=(faults.rows||[]).slice(0,8).map((r)=>r.code+' '+String(r.text||'').slice(0,70)).join('; ');
         return 'Live: '+(live||'no live readings')+'. Fault codes last read: '+(fl||'none read or none stored')+'.';
     }});
+    // the key can come from the owner's phone (ai-pair.js): on only while the pairing screen is, gone once the key arrives
+    const pairing=new KeyPairing((key)=>{const ok=assistant.setKey(key);setTimeout(repaint,400);return ok;});
     // 0.3.0 made Slash the default look. A car that already had the app keeps its saved settings, so it
     // is moved to Slash once; after that the owner's own choice in Settings is left alone.
     try{const mark=require('path').join(ctx.dataDir,'look-0.3.0');const fs=require('fs');
@@ -215,7 +219,7 @@ mgu.run({async start(ctx){
         }
         else if(page===P.faults){v.faultScope=faults.scope;v.faultRows=faults.rows;v.faultPage=faultPage;v.faultNote=faults.note;v.scanned=!!faults.at||!!faults.savedAt;v.clearPending=Date.now()<faults.confirmUntil;}
         else if(page===P.xdrive)v.xdrive=xdrive.view();
-        else if(page===P.ai){v.ai=assistant.view();v.aiKb=aiKb;v.aiForget=Date.now()<aiForgetUntil;}
+        else if(page===P.ai){v.ai=assistant.view();v.aiKb=aiKb;v.aiForget=Date.now()<aiForgetUntil;v.aiPair=pairing.view();}
         else if(page===P.perf)v.perf=perf.view(Date.now());
         else if(page===P.phone)v.phone=phone.view();
         else if(page===P.connect||page===P.flash)v.flash=flash.view();
@@ -319,6 +323,6 @@ mgu.run({async start(ctx){
         if(visible&&page===P.xdrive&&!session.demo&&!refreshPending)session.poll(()=>xdrive.tick()).then((r)=>{if(r)repaint();}).catch((e)=>log.warn(String(e)));
     },40);
     setInterval(()=>perf.idle(Date.now()),50);
-    process.once('SIGTERM',()=>{auto._stop();phone.stop();flash.stop();});
+    process.once('SIGTERM',()=>{auto._stop();phone.stop();pairing.stop();flash.stop();});
     await render();
 }});
