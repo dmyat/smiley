@@ -26,8 +26,9 @@ function valUnit(cv, r, x, y, size, c, uc, font, align) {
 function hex(cv, cx, cy, r, c) {
     const p = [0, 60, 120, 180, 240, 300].map((a) => [cx + r * cos(a), cy + r * sin(a)]);
     cv.quad([p[0], p[1], p[2], p[3]], c); cv.quad([p[3], p[4], p[5], p[0]], c);
+    cv.fillRect(cx - r + 1, cy - 1, 2 * r - 2, 2, c);          // over the line where the two halves meet (it showed on the car)
 }
-function plaque(cv, x, y, w, h, c) { cv.quad([[x + 12, y], [x + w - 12, y], [x + w, y + h / 2], [x, y + h / 2]], c); cv.quad([[x, y + h / 2], [x + w, y + h / 2], [x + w - 12, y + h], [x + 12, y + h]], c); }
+function plaque(cv, x, y, w, h, c) { cv.quad([[x + 12, y], [x + w - 12, y], [x + w, y + h / 2], [x, y + h / 2]], c); cv.quad([[x, y + h / 2], [x + w, y + h / 2], [x + w - 12, y + h], [x + 12, y + h]], c); cv.fillRect(x + 1, y + h / 2 - 1, w - 2, 2, c); }
 function frame(cv, x, y, w, h, lw, c) { cv.fillRect(x, y, w, lw, c); cv.fillRect(x, y + h - lw, w, lw, c); cv.fillRect(x, y, lw, h, c); cv.fillRect(x + w - lw, y, lw, h, c); }
 
 /* seven-segment and block lettering, drawn from rectangles */
@@ -189,10 +190,10 @@ LOOKS.hive = {
     pal: base({ bg: '#111417', text: '#ffffff', dim: '#8b939b', accent: '#d7ff3a', accent2: '#d7ff3a', ink: '#11140a', card: '#1c2024', panelEdge: '#3a4a1a' }),
     stats(cv, S, P) {
         const lm = P.accent, dy = 78;
-        hex(cv, 330, 284, 196, lm); T(cv, 'ENGINE SPEED', 330, 206, 17, P.ink, { font: 'bold', align: 'center', spacing: 3 });
-        T(cv, S.rpm.s, 330, 322, 116, P.ink, { font: 'num', align: 'center' }); T(cv, 'rpm', 330, 366, 18, P.ink, { align: 'center' }); tap(cv, S, 'rpm', 150, 110, 360, 350);
-        [[S.boost, 700, 284 - dy], [S.power, 700, 284 + dy], [S.oil, 834, 284 - 2 * dy], [{ k: 'rpm', lab: 'GEAR', s: S.gear, u: '' }, 834, 284], [S.coolant, 834, 284 + 2 * dy], [S.torque, 968, 284 - dy],
-            [{ k: 'rpm', lab: 'AWD F/R', s: S.split == null ? '--' : (100 - S.split) + '/' + S.split, u: '' }, 968, 284 + dy]].forEach((q) => {
+        hex(cv, 470, 284, 196, lm); T(cv, 'ENGINE SPEED', 470, 206, 17, P.ink, { font: 'bold', align: 'center', spacing: 3 });
+        T(cv, S.rpm.s, 470, 322, 116, P.ink, { font: 'num', align: 'center' }); T(cv, 'rpm', 470, 366, 18, P.ink, { align: 'center' }); tap(cv, S, 'rpm', 290, 110, 360, 350);
+        [[S.boost, 840, 284 - dy], [S.power, 840, 284 + dy], [S.oil, 974, 284 - 2 * dy], [{ k: 'rpm', lab: 'GEAR', s: S.gear, u: '' }, 974, 284], [S.coolant, 974, 284 + 2 * dy], [S.torque, 1108, 284 - dy],
+            [{ k: 'rpm', lab: 'AWD F/R', s: S.split == null ? '--' : (100 - S.split) + '/' + S.split, u: '' }, 1108, 284 + dy]].forEach((q) => {
             const r = q[0], hot = r.fr > 0.85;
             hex(cv, q[1], q[2], 86, hot ? lm : withAlpha(lm, 0.4)); if (!hot) hex(cv, q[1], q[2], 83, P.card);
             T(cv, r.lab, q[1], q[2] - 30, 13, hot ? P.ink : lm, { font: 'bold', align: 'center', spacing: 2 });
@@ -203,7 +204,7 @@ LOOKS.hive = {
     },
     cell(cv, x, y, w, h, r, P) {
         const k = 26, hot = r.fr > 0.85, c = hot ? P.accent : P.card;
-        cv.quad([[x + k, y], [x + w - k, y], [x + w, y + h / 2], [x, y + h / 2]], c); cv.quad([[x, y + h / 2], [x + w, y + h / 2], [x + w - k, y + h], [x + k, y + h]], c);
+        cv.quad([[x + k, y], [x + w - k, y], [x + w, y + h / 2], [x, y + h / 2]], c); cv.quad([[x, y + h / 2], [x + w, y + h / 2], [x + w - k, y + h], [x + k, y + h]], c); cv.fillRect(x + 1, y + h / 2 - 1, w - 2, 2, c);
         T(cv, r.lab, x + w / 2, y + 34, 14, hot ? P.ink : P.accent, { font: 'bold', align: 'center', spacing: 3 }); valUnit(cv, r, x + w / 2, y + h - 22, 48, hot ? P.ink : '#ffffff', hot ? P.ink : P.dim, 'num', 'center');
     },
 };

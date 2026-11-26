@@ -2,6 +2,12 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.4.2
+
+- **Hive:** the line across the middle of every hexagon is gone, and the
+  screen is centred instead of sitting to the left.
+- The same line is removed from the Deco and Hive tab shapes.
+
 ## 0.4.1
 
 Fixes from the first run of 0.4.0 on the car.
