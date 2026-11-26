@@ -2,6 +2,10 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.4.3
+
+- The app's icon in the car is a little smaller, with a margin around it.
+
 ## 0.4.2
 
 - **Hive:** the line across the middle of every hexagon is gone, and the
