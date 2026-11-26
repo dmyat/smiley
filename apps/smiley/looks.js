@@ -10,7 +10,7 @@
  */
 const { withAlpha } = require('./kit/canvas');
 
-const base = (o) => Object.assign({ panelTop: o.card, panelBottom: o.bg, tab: o.text, sel: o.accent, selText: o.ink, crit: '#ff453a', warn: '#ffb020', ok: '#5fd38a', cold: '#8fb2e6',
+const base = (o) => Object.assign({ light: false, panelTop: o.card, panelBottom: o.bg, tab: o.text, sel: o.accent, selText: o.ink, crit: '#ff453a', warn: '#ffb020', ok: '#5fd38a', cold: '#8fb2e6',
     track: o.panelEdge, tick: o.dim, off: o.dim, noticeBg: o.card, stripes: [o.accent, o.accent, o.accent2], ramp: [o.accent, o.accent, o.accent2], hotRamp: [o.accent2, o.warn || '#ffb020', '#ff6a00', '#ff453a'] }, o);
 const sin = (a) => Math.sin(a * Math.PI / 180), cos = (a) => Math.cos(a * Math.PI / 180);
 const T = (cv, s, x, y, size, c, o) => cv.text(String(s), x, y, size, c, Object.assign({ font: 'label', literal: true }, o));
@@ -50,7 +50,11 @@ function pix(cv, str, x, y, u, c) {       // 3 x 5 block digits, u = block size
     let px = x;
     String(str).split('').forEach((ch) => {
         const g = PX[ch.toUpperCase()] || PX['-'], narrow = ch === '.';
-        g.split('').forEach((row, r) => { for (let b = 0; b < 3; b++) if (parseInt(row, 10) & (4 >> b)) cv.fillRect(px + (narrow ? 0 : b * u), y + r * u, u, u, c); });
+        g.split('').forEach((row, r) => {
+            const bits = parseInt(row, 10);
+            if (narrow) { if (bits) cv.fillRect(px, y + r * u, u, u + 0.6, c); return; }
+            for (let b = 0; b < 3; b++) { if (!(bits & (4 >> b))) continue; let e = b; while (e < 2 && (bits & (4 >> (e + 1)))) e++; cv.fillRect(px + b * u, y + r * u, (e - b + 1) * u, u + 0.6, c); b = e; }
+        });
         px += (narrow ? 2 : 4) * u;
     });
     return px - x;
@@ -207,13 +211,17 @@ LOOKS.hive = {
 /* ---------------------------------------------------------------- COMIC */
 LOOKS.comic = {
     name: 'Comic', tab: 'sticker',
-    pal: base({ bg: '#ffd60a', text: '#111111', dim: '#4a4a4a', accent: '#e8202a', accent2: '#b3121a', ink: '#ffffff', card: '#ffffff', panelEdge: '#111111', warn: '#b34700', ok: '#1c7a3c', cold: '#1b5fa8', crit: '#b3121a' }),
+    kit: { bg: '#141414', text: '#ffffff', dim: '#b0b0b0', tab: '#ffffff', selText: '#ffffff', card: '#222222', panelTop: '#222222', panelBottom: '#141414', panelEdge: '#444444', track: '#333333', ink: '#ffffff' },
+    pal: base({ light: true, bg: '#ffd60a', text: '#111111', dim: '#4a4a4a', accent: '#e8202a', accent2: '#b3121a', ink: '#ffffff', card: '#ffffff', panelEdge: '#111111', warn: '#b34700', ok: '#1c7a3c', cold: '#1b5fa8', crit: '#b3121a' }),
     stats(cv, S, P) {
         const ink = '#111111', star = (cx, cy, k, c) => { const p = []; for (let i = 0; i < 24; i++) { const r = (i % 2 ? 0.7 : 1) * k; p.push([cx + r * 1.12 * cos(i * 15), cy + r * sin(i * 15)]); }
-            for (let i = 0; i < 24; i++) cv.quad([[cx, cy], p[i], p[(i + 1) % 24], [cx, cy]], c); };
+            // each point is one piece reaching into the middle; a disc over the middle hides where the pieces meet
+            for (let i = 0; i < 24; i += 2) cv.quad([[cx, cy], p[(i + 23) % 24], p[i], p[(i + 1) % 24]], c);
+            for (let a = 0; a < 360; a += 30) cv.quad([[cx, cy], [cx + 0.69 * k * 1.12 * cos(a - 16), cy + 0.69 * k * sin(a - 16)], [cx + 0.72 * k * 1.12 * cos(a), cy + 0.72 * k * sin(a)], [cx + 0.69 * k * 1.12 * cos(a + 16), cy + 0.69 * k * sin(a + 16)]], c);
+            cv.circle(cx, cy, 0.62 * k, c); };
         for (let yy = 70; yy < 520; yy += 34) for (let xx = 20 + (yy % 68 ? 17 : 0); xx < 1600; xx += 34) cv.fillRect(xx, yy, 5, 5, withAlpha('#000000', 0.13));
         star(300, 276, 176 + S.power.fr * 20, ink); star(300, 276, 164 + S.power.fr * 20, P.accent);
-        T(cv, S.power.s, 303, 303, 118, ink, { font: 'gear', align: 'center' }); T(cv, S.power.s, 298, 298, 118, '#ffffff', { font: 'gear', align: 'center' });
+        T(cv, S.power.s, 300, 300, 118, '#ffffff', { font: 'gear', align: 'center' });
         T(cv, 'HP!', 300, 346, 38, '#ffffff', { font: 'bold', align: 'center', spacing: 2 }); tap(cv, S, 'power', 120, 110, 360, 330);
         const panel = (r, x, y, w, h, bg) => { cv.fillRect(x + 9, y + 9, w, h, ink); cv.fillRect(x, y, w, h, bg); frame(cv, x, y, w, h, 5, ink);
             T(cv, r.lab, x + 22, y + 40, 21, bg === '#ffffff' ? P.accent : ink, { font: 'bold', spacing: 2 }); valUnit(cv, r, x + 22, y + h - 24, h > 150 ? 92 : 76, ink, ink, 'num'); if (r.lab !== 'GEAR') tap(cv, S, r.k, x, y, w, h); };
@@ -230,7 +238,8 @@ LOOKS.comic = {
 /* ---------------------------------------------------------------- LCD WATCH */
 LOOKS.lcd = {
     name: 'LCD Watch', tab: 'key',
-    pal: base({ bg: '#b8c4a8', text: '#1d241a', dim: '#4a5644', accent: '#1d241a', accent2: '#1d241a', ink: '#b8c4a8', card: '#aab69a', panelEdge: '#6f7b66', warn: '#5c3a00', ok: '#1d4a24', cold: '#1d3a5c', crit: '#6b1410' }),
+    kit: { bg: '#1b1d20', text: '#e8eaec', dim: '#9aa0a6', tab: '#e8eaec', selText: '#ffffff', sel: '#b8c4a8', accent: '#b8c4a8', accent2: '#b8c4a8', card: '#2b2f33', panelTop: '#2b2f33', panelBottom: '#1b1d20', panelEdge: '#4a4f55', track: '#3a3f44', ink: '#1d241a' },
+    pal: base({ light: true, bg: '#b8c4a8', text: '#1d241a', dim: '#4a5644', accent: '#1d241a', accent2: '#1d241a', ink: '#b8c4a8', card: '#aab69a', panelEdge: '#6f7b66', warn: '#5c3a00', ok: '#1d4a24', cold: '#1d3a5c', crit: '#6b1410' }),
     stats(cv, S, P) {
         const sg = P.accent, gh = withAlpha(sg, 0.07);
         cv.roundRect(34, 62, 1532, 386, 16, '#2b2f33'); cv.roundRect(42, 70, 1516, 370, 10, '#c2cdb3');
@@ -253,7 +262,8 @@ LOOKS.lcd = {
 /* ---------------------------------------------------------------- RALLY */
 LOOKS.rally = {
     name: 'Rally', tab: 'box',
-    pal: base({ bg: '#e3d7b5', text: '#2f3524', dim: '#5f654f', accent: '#ff6a1a', accent2: '#2f3524', ink: '#2f3524', card: '#d6c9a3', panelEdge: '#2f3524', warn: '#a33d00', ok: '#2c6b2f', cold: '#28507a', crit: '#a31a10' }),
+    kit: { bg: '#23281b', text: '#e3d7b5', dim: '#b3aa8a', tab: '#e3d7b5', selText: '#ffffff', accent2: '#e3d7b5', card: '#2f3524', panelTop: '#2f3524', panelBottom: '#23281b', panelEdge: '#5f654f', track: '#3a4130', ink: '#23281b' },
+    pal: base({ light: true, bg: '#e3d7b5', text: '#2f3524', dim: '#5f654f', accent: '#ff6a1a', accent2: '#2f3524', ink: '#2f3524', card: '#d6c9a3', panelEdge: '#2f3524', warn: '#a33d00', ok: '#2c6b2f', cold: '#28507a', crit: '#a31a10' }),
     stats(cv, S, P) {
         const ol = P.text, sd = P.bg, og = P.accent;
         [S.rpm, S.boost, S.power, S.torque].forEach((r, i) => {

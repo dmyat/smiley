@@ -2,6 +2,19 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.4.1
+
+Fixes from the first run of 0.4.0 on the car.
+
+- **Tabs readable in every theme.** The car's own tab strip now always gets
+  light lettering: the open tab was dark on dark in 8-Bit and others, and the
+  other tabs were too dim in Comic, LCD Watch and Rally.
+- **8-Bit:** the block digits are solid, with no lines showing between blocks.
+- **Comic:** the burst is one clean shape and the horsepower number is no
+  longer doubled.
+- **Light themes:** buttons and the maker's mark are drawn dark so they show.
+- **Dyno:** the graph always covers the whole rev range, 1000 to 7000 rpm.
+
 ## 0.4.0
 
 - **Ten new themes replace all the old ones:** Slash, Midnight, Deco, Big

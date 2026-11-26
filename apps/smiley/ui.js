@@ -103,7 +103,9 @@ PALETTES.custom = customPalette(null);
 const Looks = require('./looks');
 Object.keys(PALETTES).forEach((k) => { delete PALETTES[k]; });
 Looks.ORDER.forEach((id) => { PALETTES[id] = Object.assign({ name: Looks.LOOKS[id].name.toUpperCase() }, Looks.LOOKS[id].pal); });
-try { const KT = require('./kit/themes'); Object.keys(PALETTES).forEach((id) => { KT.THEMES[id] = PALETTES[id]; }); } catch (e) { /* previews without the kit */ }
+// The car draws its own tab strip and the Settings sheet from these: always light lettering on a dark ground there,
+// whatever the theme's page colours are (a light theme hands the kit a dark version of itself).
+try { const KT = require('./kit/themes'); Object.keys(PALETTES).forEach((id) => { KT.THEMES[id] = Object.assign({}, PALETTES[id], { selText: '#ffffff' }, Looks.LOOKS[id].kit || {}); }); } catch (e) { /* previews without the kit */ }
 const THEME = Object.assign({ id: 'slash' }, PALETTES.slash);
 function setTheme(id, custom) {
     if (!PALETTES[id]) id = 'slash';
@@ -129,8 +131,8 @@ function button(cv,x,y,w,label,run,key,on,disabled) {
         cv.roundRect(x,y,w,h,r,withAlpha(THEME.accent,disabled?0.45:1));
         cv.roundRect(x+1.5,y+1.5,w-3,h/2-1.5,r-1.5,withAlpha('#ffffff',disabled?0.04:0.14));      // a soft sheen on the upper half
     } else {
-        cv.roundRect(x,y,w,h,r,withAlpha('#ffffff',disabled?0.025:0.055));
-        cv.strokeRoundRect(x,y,w,h,r,1.5,withAlpha(THEME.accent,disabled?0.14:0.5));
+        if(THEME.light){cv.roundRect(x,y,w,h,r,withAlpha(THEME.card,disabled?0.5:1));cv.strokeRoundRect(x,y,w,h,r,2.5,withAlpha(THEME.text,disabled?0.3:1));}
+        else{cv.roundRect(x,y,w,h,r,withAlpha('#ffffff',disabled?0.025:0.055));cv.strokeRoundRect(x,y,w,h,r,1.5,withAlpha(THEME.accent,disabled?0.14:0.5));}
     }
     cv.text(t,x+w/2,y+h/2+7.5,20,on?THEME.ink:disabled?THEME.off:THEME.text,{align:'center',font:'bold',spacing:1.5});
     if(!disabled&&run&&cv.target)cv.target(x,y,w,h,run,key||label);
@@ -952,9 +954,9 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.4.0 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.4.1 */
 function watermark(cv,v) {
-    const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
+    const y=514, size=14, o={font:'bold',spacing:1.5}, W=THEME.light?THEME.text:'#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
     const w=cv.textWidth('SMILEY',size,o);
     cv.circle(24+w+10,y-5,2.5,W);
@@ -1121,14 +1123,15 @@ function dynoPage(cv,p,v) {
     if(!r){text(cv,'Floor it in one gear to draw your power curve',998,318,24,THEME.dim,{align:'center'});return;}
     // the scales fit the pulls shown
     const runs=[b,r].filter(Boolean), all=runs.reduce((a,x)=>a.concat(x.curve),[]);
-    const x0=Math.floor(Math.min(...all.map((c)=>c.rpm))/500)*500, x1=Math.max(x0+1500,Math.ceil(Math.max(...all.map((c)=>c.rpm))/500)*500);
+    // the whole rev range, 1000 to 7000 rpm, whatever part of it the pull covered
+    const x0=Math.min(1000,Math.floor(Math.min(...all.map((c)=>c.rpm))/500)*500), x1=Math.max(7000,Math.ceil(Math.max(...all.map((c)=>c.rpm))/500)*500);
     const yMax=Math.ceil(Math.max(100,...all.map((c)=>Math.max(hp(c.p),tq(c.t))))*1.18/50)*50;
     const X=460, Y=200, Wd=1076, Hd=228, padL=44, padB=26, padR=8, padT=8;      // the legend sits above the graph
     const line=(run,f,color,width)=>({pts:run.curve.map((c)=>[c.rpm,f(c)]),color,width});
     const series=[];
     if(b){series.push(line(b,(c)=>hp(c.p),withAlpha(THEME.accent,0.3),2));series.push(line(b,(c)=>tq(c.t),withAlpha(THEME.cold,0.3),2));}
     series.push(line(r,(c)=>hp(c.p),THEME.accent,4));series.push(line(r,(c)=>tq(c.t),THEME.cold,3));
-    G.chart(cv,THEME,X,Y,Wd,Hd,{xMin:x0,xMax:x1,yMin:0,yMax,xStep:500,yStep:yMax/5,xFmt:(n)=>String(n),yFmt:(n)=>String(Math.round(n)),series});
+    G.chart(cv,THEME,X,Y,Wd,Hd,{xMin:x0,xMax:x1,yMin:0,yMax,xStep:1000,yStep:yMax/5,xFmt:(n)=>String(n),yFmt:(n)=>String(Math.round(n)),series});
     // the peaks, marked on the curves and named
     const px=(rpm)=>X+padL+(rpm-x0)/(x1-x0)*(Wd-padL-padR), py=(val)=>Y+padT+(Hd-padT-padB)*(1-val/yMax);
     const mark=(rpm,val,color,label,up)=>{
