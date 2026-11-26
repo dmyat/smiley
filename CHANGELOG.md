@@ -2,6 +2,11 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.4.5
+
+- The app's icon has a clear background: the black is gone, so only the car,
+  the hat, the snow and the name show on the car's menu.
+
 ## 0.4.4
 
 - The app's icon has smooth rounded corners.
