@@ -2,6 +2,24 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.4.0
+
+- **Ten new themes replace all the old ones:** Slash, Midnight, Deco, Big
+  Tach, Neon, Hive, Comic, LCD Watch, Rally and 8-Bit. Each has its own
+  colours, its own tab bar and its own Live Stats screen. Pick one under
+  Settings, Theme. Slash stays the default; a car on one of the old themes is
+  moved to Slash.
+- **The old layouts are gone:** Six gauges, Cockpit, Race dash, Graph view
+  and Car view, along with the gauge editor, the Custom theme and the
+  Christmas surprises.
+- **More readings.** A button on every Live Stats screen opens a second page
+  in the theme's style with the other twelve readings. Tap any reading on
+  either page to make it big.
+- Not carried over to the new screens yet: tyre pressures and temperatures,
+  and the lowest and highest value beside each reading (big number mode
+  still shows them).
+- The other tabs take each theme's colours and tab bar and keep their layout.
+
 ## 0.3.3
 
 - **New logo.** The Christmas one: the car in a Santa hat, with snow and holly.

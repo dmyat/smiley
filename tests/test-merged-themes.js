@@ -19,25 +19,21 @@ const tap=async key=>{await hu.loopFn();const t=targets().find(t=>t.key===key);a
 const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 setTimeout(async()=>{
  try{
-  assert.equal(hu.spec.version,'0.3.3');assert.equal(UI.TABS.length,10);
+  assert.equal(hu.spec.version,'0.4.0');assert.equal(UI.TABS.length,10);
   const themes=hu.spec.settings.find(s=>s.key==='theme').options.map(o=>o[0]);
-  assert.deepStrictEqual(themes,['slash','smiley','l_burgundy','j_amethyst','l_midnight','s_green','s_m','spider','xmas','xmas_red','custom']);
-  setting('customA','teal');setting('customB','gold');setting('customBg','graphite');
+  assert.deepStrictEqual(themes,['slash','midnight','deco','bigtach','neon','hive','comic','lcd','rally','pixel']);
   for(const theme of themes){
    setting('theme',theme);await hu.display.onTab(P.connect);await hu.loopFn();
    assert(targets().some(t=>t.key==='betaContinue'));assert(!targets().some(t=>t.key==='flashConnect'));
-   assert(theme==='custom'?UI.THEME.id.startsWith('custom|'):UI.THEME.id===theme,'Connect warning follows selected theme');
+   assert(UI.THEME.id===theme,'Connect warning follows selected theme');
    await tap('betaContinue');if(!flash.connected)await tap('flashConnect');
    await tap('openFlash');await hu.loopFn();assert(targets().some(t=>t.key==='betaContinue'));assert(!targets().some(t=>t.key==='flashStart'));
    await tap('betaContinue');await tap('flashLoad');assert(!targets().some(t=>t.key==='flashStart'));await tap('flashPower');
    assert(targets().some(t=>t.key==='flashStart'));assert.equal(UI.THEME.accent,UI.PALETTES[theme].accent);
-   if(theme==='custom'){assert.equal(UI.THEME.accent,'#1e96a0');assert.equal(UI.THEME.bg,'#101114');}
    if(out)fs.writeFileSync(path.join(out,theme+'-flash-ready.png'),last.png());
   }
   await tap('flashStart');const run=tap('flashStart');await sleep(100);assert(flash.programming);
-  setting('customA','orange');setting('customB','sky');setting('customBg','navy');await hu.loopFn();
-  assert.equal(hu.ctx.settings.get('customA'),'orange');assert.equal(hu.ctx.settings.get('customB'),'sky');assert.equal(hu.ctx.settings.get('customBg'),'navy');
-  assert.equal(UI.THEME.accent,'#ff8a2a');assert.equal(UI.THEME.bg,'#070a12');
+  setting('theme','neon');await hu.loopFn();assert.equal(UI.THEME.accent,'#ff3ea5','the theme can still be changed while the simulated flash runs');
   setting('demo','off');assert.equal(hu.ctx.settings.get('demo'),'on','diagnostic source remains locked during programming');
   await run;assert.equal(flash.phase,'Simulation complete');assert.equal(flash.percent,100);assert.equal(vehicleRequests,0);
   console.log('PASS merged source: all eight themes, custom colours on both beta tabs, warnings before controls, custom edits during simulated programming, diagnostic source lock, version 0.1.2');process.exit(0);

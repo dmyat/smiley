@@ -136,7 +136,6 @@ mgu.run({async start(ctx){
         editDone:()=>{edit=null;repaint();},
         resetPeaks:()=>{telemetry.resetPeaks();repaint();},
         big:(id)=>{big=id||null;repaint();},
-        layoutNext:()=>{const o=UI.LAYOUT_ORDER,i=o.indexOf(settings.get('statsLayout'));big=null;settings.set('statsLayout',o[(i+1)%o.length]);repaint();},
         perfMode:(m)=>{perf.setMode(m);repaint();},
         resetG:()=>{perf.resetG();repaint();},
         perfHist:(d)=>{perf.histTurn(d);repaint();},
@@ -194,7 +193,9 @@ mgu.run({async start(ctx){
     // 0.3.0 made Slash the default look. A car that already had the app keeps its saved settings, so it
     // is moved to Slash once; after that the owner's own choice in Settings is left alone.
     try{const mark=require('path').join(ctx.dataDir,'look-0.3.0');const fs=require('fs');
-        if(!fs.existsSync(mark)){settings.set('theme','slash');settings.set('statsLayout','slash');fs.writeFileSync(mark,'1');}}catch(e){log.warn('look: '+e);}
+        if(!fs.existsSync(mark)){settings.set('theme','slash');fs.writeFileSync(mark,'1');}}catch(e){log.warn('look: '+e);}
+    // 0.4.0: the themes are the ten looks. A saved theme that no longer exists becomes Slash.
+    if(UI.LOOK_ORDER.indexOf(settings.get('theme'))<0)settings.set('theme','slash');
     // warm-up minutes, the safe rev limit and the turbo cool-down (warm.js): fed once a second from the car's values
     const warm=new Warm();
     const mono=()=>{const h=process.hrtime();return h[0]*1000+h[1]/1e6;};
@@ -309,7 +310,7 @@ mgu.run({async start(ctx){
     if(!session.demo&&!session.paused)await action(refresh)();
     setInterval(()=>{
         if(flash.busy||flash.connected)return;
-        telemetry.setFocus(page===P.stats?(big?[big]:(UI.LAYOUTS[settings.get('statsLayout')]||{}).keys||gauges.page(statsPage)):null);          // a gauge shown big is read as fast as the car answers
+        telemetry.setFocus(page===P.stats?(big?[big]:UI.STATS_KEYS[statsPage?1:0]):null);          // a gauge shown big is read as fast as the car answers
         // the min / max keep counting while another tab is shown (four times a second is plenty)
         if(page!==P.stats&&(++peakTick%6===0))telemetry.snapshot(session.demo);
         // The first read of the engine computer can go unanswered (the car just woken, another app asking

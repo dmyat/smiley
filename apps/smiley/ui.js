@@ -99,10 +99,14 @@ PALETTES.xmas_red = Object.assign(look('CHRISTMAS RED', { bg: '#160607', bg2: '#
     ink: '#2a0a0c', off: '#7c5553', notice: '#3a1216', crit: '#ff8f7a', warn: '#ffd27a' }), { snow: true });
 PALETTES.custom = customPalette(null);
 // the car's own header and frame are drawn by the kit from its theme table: give it the same colours
+// Since 0.4.0 the themes are the ten looks of looks.js and nothing else: the older palettes above are dropped here.
+const Looks = require('./looks');
+Object.keys(PALETTES).forEach((k) => { delete PALETTES[k]; });
+Looks.ORDER.forEach((id) => { PALETTES[id] = Object.assign({ name: Looks.LOOKS[id].name.toUpperCase() }, Looks.LOOKS[id].pal); });
 try { const KT = require('./kit/themes'); Object.keys(PALETTES).forEach((id) => { KT.THEMES[id] = PALETTES[id]; }); } catch (e) { /* previews without the kit */ }
-const THEME = Object.assign({ id: 'smiley' }, PALETTES.smiley);
+const THEME = Object.assign({ id: 'slash' }, PALETTES.slash);
 function setTheme(id, custom) {
-    if (!PALETTES[id]) id = 'smiley';
+    if (!PALETTES[id]) id = 'slash';
     if (id === 'custom') {
         // the three choices are part of the id, so a change in Settings repaints everything, cached layers too
         const key = 'custom|' + [custom && custom.a, custom && custom.b, custom && custom.bg].join('|');
@@ -226,8 +230,7 @@ function draw(cv, v, act) {
         :wv.cool&&wv.cool.state==='cooling'?{text:'TURBO COOL-DOWN '+mmss(wv.cool.left),color:'#f0b24a'}:wv.cool&&wv.cool.state==='done'?{text:'TURBO COOLED',color:'#86c3a0'}:null;
     const badges=[tip,warm&&{text:warm.text,color:warm.color},{text:v.demo?'DEMO':v.paused?'PAUSED':'SMILEY',color:v.demo?THEME.warn:THEME.accent}].filter(Boolean);
     if(cv.chrome)G.frame(cv,THEME,TABS,v.page,badges);
-    else if(THEME.id==='slash')slashHeader(cv,v,badges);
-    else{G.header(cv,THEME,190,0,1410,48,'',TABS,v.page,badges,true,false);text(cv,'SMILEY',25,35,28,THEME.text,{font:'bold',spacing:3});}
+    else Looks.header(cv,Looks.LOOKS[THEME.id]?THEME.id:'slash',TABS,v.page,badges,W);
     if(v.page===PAGE.stats) stats(cv,v,act);
     if(v.page===PAGE.xdrive) xdrivePage(cv,v,act);
     if(v.page===PAGE.perf) perf(cv,v,act);
@@ -441,6 +444,22 @@ function stats(cv,v,a) {
         // live horsepower at the crankshaft, from the engine computer's torque and the engine speed (telemetry.js)
         power:['HORSEPOWER',d.power,'hp',R.power[0],R.power[1],0,'power',(n)=>n],
     };
+    {
+        // Since 0.4.0 Live Stats is the theme's own screen (looks.js), a More readings page in the same style, or one reading big.
+        const pk=d.peaks||{}, cl=(n)=>Math.max(0,Math.min(1,n)), id=Looks.LOOKS[THEME.id]?THEME.id:'slash';
+        if(v.big&&DEF[v.big]){bigNumber(cv,DEF[v.big],pk[v.big],ZONES[v.big]?ZONES[v.big](f):null,TEMPS.indexOf(v.big)>=0,a);return;}
+        const R=(k,lab)=>{const q=DEF[k];return {k,lab,s:shown(q),u:q[2]==='rpm'?'':q[2],fr:typeof q[1]==='number'?cl((q[1]-q[3])/(q[4]-q[3])):0};};
+        const sr=typeof v.splitRear==='number'?Math.round(v.splitRear):null, gb=typeof v.gearboxC==='number'?Math.round(temp(v.gearboxC)):null;
+        const S={rpm:R('rpm','RPM'),power:R('power','POWER'),boost:R('boost','BOOST'),torque:R('torque','TORQUE'),oil:R('oil','OIL'),coolant:R('coolant','WATER'),
+            gear:String(v.gearText||'-'),rev:typeof d.rpm==='number'?cl(d.rpm/7000):0,split:sr,big:(k)=>a.big(k),
+            more:[R('iat','INTAKE TEMP'),R('oilp','OIL PRESSURE'),R('hpfp','HIGH FUEL'),R('lpfp','LOW FUEL'),R('timing','TIMING'),R('lambda','LAMBDA'),R('boostTarget','BOOST TARGET'),R('load','ENGINE LOAD'),
+                R('stft1','FUEL TRIM 1'),R('stft2','FUEL TRIM 2'),{k:null,lab:'GEARBOX OIL',s:gb==null?'--':String(gb),u:tU,fr:0},{k:null,lab:'REAR TORQUE',s:sr==null?'--':String(sr),u:'%',fr:0}]};
+        S.power.u='hp';
+        if(v.statsPage)Looks.more(cv,id,S);else Looks.LOOKS[id].stats(cv,S,THEME);
+        button(cv,1340,462,236,v.statsPage?'Main screen':'More readings',a.statsPage,'statsPage',false,false);
+        return;
+    }
+    // (the six-gauge page and the older layouts below are no longer reached)
     const ids=v.gauges, items=ids.map((id)=>DEF[id]), pk=d.peaks||{}, base=(v.statsPage?1:0)*PER_PAGE, ed=v.edit;
     if(v.layout&&LAYOUTS[v.layout]&&!ed&&!(v.big&&DEF[v.big])){LAYOUTS[v.layout].draw(cv,{DEF,items,pk,f,v,a,d});if(!LAYOUTS[v.layout].ownFoot)layoutFoot(cv,v,a,d);return;}
     if(v.big&&DEF[v.big]&&!ed){bigNumber(cv,DEF[v.big],pk[v.big],ZONES[v.big]?ZONES[v.big](f):null,TEMPS.indexOf(v.big)>=0,a);return;}
@@ -933,7 +952,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.3.3 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.4.0 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
@@ -1149,4 +1168,5 @@ function brakePage(cv,p) {
     });
     text(cv,r?'Peak '+r.peakG.toFixed(2)+' g':'',620,438,20,THEME.dim);
 }
-module.exports={warmup,SPLASH,LAYOUTS,LAYOUT_ORDER,draw,W,H,TABS,THEME,PAGE,slotAt,setTheme,PALETTES,surpriseAt,SURPRISES};
+const STATS_KEYS=[['rpm','boost','oil','coolant','torque'],['iat','oilp','hpfp','lpfp','timing','lambda','boostTarget','load','stft1','stft2']];
+module.exports={warmup,SPLASH,LAYOUTS,LAYOUT_ORDER,STATS_KEYS,LOOK_ORDER:Looks.ORDER,draw,W,H,TABS,THEME,PAGE,slotAt,setTheme,PALETTES,surpriseAt,SURPRISES};

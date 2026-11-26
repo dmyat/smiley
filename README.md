@@ -6,11 +6,11 @@
 
 **Your BMW's engine, tune, faults and performance timers, on the car's own screen.**
 
-An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.3.3 &nbsp;·&nbsp; by David Myat
+An app for the iDrive 7 head unit (MGU) &nbsp;·&nbsp; Version 0.4.0 &nbsp;·&nbsp; by David Myat
 
 [The tabs](#the-tabs) &nbsp;·&nbsp; [Themes](#themes) &nbsp;·&nbsp; [Install](#install) &nbsp;·&nbsp; [Read this first](#read-this-first)
 
-<img src="docs/screenshots/slash.png" alt="Live Stats in the Slash look: the gear on a red slab, six readings beside it">
+<img src="docs/screenshots/slash.png" alt="Live Stats in the Slash theme: the gear on a red slab, six readings beside it">
 
 </div>
 
@@ -27,21 +27,17 @@ demo data.
 
 ### Live Stats
 
-Opens on the **Slash** screen at the top of this page: the gear, six readings
-and a rev bar. The Layout button steps through five more layouts:
+Each theme has its own Live Stats screen, showing the gear, engine speed,
+horsepower, boost, torque, oil and coolant in that theme's style. **More
+readings** opens a second page in the same style with the rest: intake
+temperature, oil pressure, both fuel pressures, timing, lambda, boost target,
+engine load, both fuel trims, gearbox oil temperature and the rear torque
+share. Tap any reading to make it fill the page.
 
-- **Six gauges**: two pages of gauges you choose from 17 readings. Press and
-  hold a gauge to change what it shows.
-- **Cockpit**, **Race dash** and **Graph view**: the same readings as a ring,
-  rising bars, or 30-second lines.
-- **Car view**: a top view of the car with each tyre's pressure and
-  temperature, the xDrive torque split and the gearbox oil temperature.
+The header shows a warm-up light, the minutes until the oil is warm with the
+revs to keep under, and a turbo cool-down countdown after hard driving.
 
-Tap any reading to make it fill the page. The header shows a warm-up light,
-the minutes until the oil is warm with the revs to keep under, and a turbo
-cool-down countdown after hard driving.
-
-<img src="docs/screenshots/live-stats.png" alt="Live Stats, six gauges layout">
+<img src="docs/screenshots/live-stats.png" alt="More readings page in the Slash theme">
 
 ### AWD / 2WD
 
@@ -83,12 +79,11 @@ The VIN, the engine computer's numbers, the tune found and the app version.
 
 ## Themes
 
-Settings → Theme. **Slash** is the default. The others: Noir & Champagne,
-Burgundy & Gold, Amethyst & Gold, Midnight & Gold, Racing Green, Motorsport,
-Spider Red & Blue, Christmas Green and Christmas Red (both with falling snow),
-and **Custom**, built from a main colour, a second colour and a background.
+Settings → Theme. Ten themes, each with its own colours, tab bar and Live
+Stats screen: **Slash** (the default), Midnight, Deco, Big Tach, Neon, Hive,
+Comic, LCD Watch, Rally and 8-Bit.
 
-<img src="docs/screenshots/themes.png" alt="Eight of the themes side by side on the Live Stats page">
+<img src="docs/screenshots/themes.png" alt="The ten themes, each on its own Live Stats screen">
 
 ## Install
 
@@ -159,7 +154,7 @@ thing that looks wrong.**
 python3 kit/tools/build.py --preview-only smiley   # stage the app without the BMW SDK
 node tests/test-smiley.js                          # 57 integration checks
 node tests/test-native-flow.js                     # the app on the head-unit stub
-node tests/test-edit-gauges.js                     # press-and-hold gauge editing
+node tests/test-looks.js                           # the ten themes on the head-unit stub
 node tests/test-phone-net.js                       # the phone access helper, against a pretend firewall
 ```
 
