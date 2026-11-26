@@ -28,6 +28,12 @@ const PALETTES = {
         sel: '#c9a55c', selText: '#f5f0e6', crit: '#e2675c', warn: '#e3ad55', ok: '#86c3a0', cold: '#a9bfd0',
         stripes: ['#8c6b2e','#c9a55c','#f1e2b6'], ramp: ['#8c6b2e','#c9a55c','#f1e2b6'], hotRamp: ['#f1e2b6','#c9a55c','#e89a3c','#e2574c'],
         card: '#15130f', ink: '#15110a', off: '#6f6756', noticeBg: '#2a2314' },
+    // Slash: racing red cut across black, white lettering. The default look since 0.3.0.
+    slash: { name: 'SLASH', bg: '#0c0c0d', panelTop: '#1a1a1c', panelBottom: '#121213', panelEdge: '#2c2c2e',
+        text: '#ffffff', dim: '#9a9a9a', track: '#232325', tick: '#6a6a6c', tab: '#ffffff', accent: '#e10600', accent2: '#ffffff',
+        sel: '#e10600', selText: '#ffffff', crit: '#ff453a', warn: '#ffb020', ok: '#5fd38a', cold: '#8fb2e6',
+        stripes: ['#7a0400','#e10600','#ff6a5c'], ramp: ['#7a0400','#e10600','#ff6a5c'], hotRamp: ['#ffffff','#ffb020','#ff6a00','#e10600'],
+        card: '#161617', ink: '#ffffff', off: '#5a5a5c', noticeBg: '#2a1210' },
     // soft red on deep navy, with a soft blue for the second colour
     spider: { name: 'SPIDER', bg: '#090c15', panelTop: '#171c2c', panelBottom: '#0f1320', panelEdge: '#2b3452',
         text: '#f1f3f8', dim: '#98a2b8', track: '#222a40', tick: '#6b7691', tab: '#f1f3f8', accent: '#e0646b', accent2: '#a9c2ee',
@@ -189,6 +195,27 @@ function splash(cv,ms) {
     const sub=ease((ms-760)/300);
     if(sub>0)cv.text('PERFORMANCE',800,356,26,withAlpha(THEME.accent2||THEME.accent,sub*out),{font:'bold',spacing:12,align:'center'});
 }
+/*
+ * Slash look, the tab bar: slanted tabs packed against the top right corner, the open one white with
+ * red lettering; the name on a red wedge at the left; badges as plain coloured words between them.
+ */
+function slashHeader(cv,v,badges) {
+    cv.fillRect(0,0,W,48,THEME.bg);
+    cv.quad([[0,0],[214,0],[190,48],[0,48]],THEME.accent);
+    text(cv,'SMILEY',25,35,28,'#ffffff',{font:'bold',spacing:3});
+    const names=TABS.map((n)=>n.toUpperCase()), opt={font:'bold',spacing:1}, ws=names.map((n)=>cv.textWidth(n,18,opt)+40), SK=14;
+    let x=W-22-ws.reduce((p,c)=>p+c+6,0);
+    cv.tabRects=[];
+    let bx=x-18;
+    (badges||[]).slice().reverse().forEach((b)=>{const w=cv.textWidth(b.text,16,opt);bx-=w;if(bx>230)text(cv,b.text,bx,31,16,b.color||THEME.dim,opt);bx-=26;});
+    names.forEach((n,i)=>{
+        const w=ws[i], on=i===v.page;
+        cv.quad([[x+SK,8],[x+w+SK,8],[x+w,40],[x,40]],on?'#ffffff':withAlpha('#ffffff',0.1));
+        text(cv,n,x+w/2+SK/2,31,18,on?THEME.accent:'#ffffff',Object.assign({align:'center'},opt));
+        cv.tabRects.push({i,x,y:0,w:w+SK,h:48});
+        x+=w+6;
+    });
+}
 function draw(cv, v, act) {
     setTheme(v.theme,v.custom);
     cv.clear(THEME.bg);
@@ -199,6 +226,7 @@ function draw(cv, v, act) {
         :wv.cool&&wv.cool.state==='cooling'?{text:'TURBO COOL-DOWN '+mmss(wv.cool.left),color:'#f0b24a'}:wv.cool&&wv.cool.state==='done'?{text:'TURBO COOLED',color:'#86c3a0'}:null;
     const badges=[tip,warm&&{text:warm.text,color:warm.color},{text:v.demo?'DEMO':v.paused?'PAUSED':'SMILEY',color:v.demo?THEME.warn:THEME.accent}].filter(Boolean);
     if(cv.chrome)G.frame(cv,THEME,TABS,v.page,badges);
+    else if(THEME.id==='slash')slashHeader(cv,v,badges);
     else{G.header(cv,THEME,190,0,1410,48,'',TABS,v.page,badges,true,false);text(cv,'SMILEY',25,35,28,THEME.text,{font:'bold',spacing:3});}
     if(v.page===PAGE.stats) stats(cv,v,act);
     if(v.page===PAGE.xdrive) xdrivePage(cv,v,act);
@@ -413,7 +441,7 @@ function stats(cv,v,a) {
         power:['HORSEPOWER',d.power,'hp',R.power[0],R.power[1],0,'power',(n)=>n],
     };
     const ids=v.gauges, items=ids.map((id)=>DEF[id]), pk=d.peaks||{}, base=(v.statsPage?1:0)*PER_PAGE, ed=v.edit;
-    if(v.layout&&LAYOUTS[v.layout]&&!ed&&!(v.big&&DEF[v.big])){LAYOUTS[v.layout].draw(cv,{DEF,items,pk,f,v,a,d});layoutFoot(cv,v,a,d);return;}
+    if(v.layout&&LAYOUTS[v.layout]&&!ed&&!(v.big&&DEF[v.big])){LAYOUTS[v.layout].draw(cv,{DEF,items,pk,f,v,a,d});if(!LAYOUTS[v.layout].ownFoot)layoutFoot(cv,v,a,d);return;}
     if(v.big&&DEF[v.big]&&!ed){bigNumber(cv,DEF[v.big],pk[v.big],ZONES[v.big]?ZONES[v.big](f):null,TEMPS.indexOf(v.big)>=0,a);return;}
     // the pick list covers one column: the right one, or the left when the picked gauge is on the right
     const onPage=ed&&ed.picked!=null&&ed.picked>=base&&ed.picked<base+PER_PAGE, listCol=ed&&ed.picked!=null?(onPage&&(ed.picked-base)%COLS===COLS-1?0:COLS-1):-1;
@@ -584,13 +612,36 @@ function carLayout(cv,o) {
     text(cv,'Engine load '+shown(load)+(load[1]==null?'':' %')+gb,X+380,Y+334,17,THEME.dim,{align:'center'});
     text(cv,(ty?(o.v.demo?'Tyre numbers are samples in the demo':Object.keys(ty).some((k)=>pressureState(ty[k].p,ty[k].target)==='low')?'A tyre is well under its target pressure':''):hints.length?'Tyre signals on this car: '+hints.join(', '):'Tyre pressure: no reading from the car yet').slice(0,110),X+380,Y+358,14,THEME.dim,{align:'center'});
 }
+/*
+ * Slash, Live Stats: the gear as tall as the screen on a red slab, six readings in two columns on
+ * black, the revs as one slanted bar. A tap on a reading makes it big, as on every layout.
+ */
+function slashLayout(cv,o) {
+    const A=THEME.accent, v=o.v, D=o.DEF;
+    cv.quad([[0,48],[720,48],[470,520],[0,520]],A);
+    text(cv,'GEAR',56,92,20,'#ffffff',{font:'bold',spacing:4});
+    cv.text(String(v.gearText||'-'),250,470,400,'#ffffff',{font:'gear',align:'center',literal:true});
+    const sr=typeof v.splitRear==='number'?Math.round(v.splitRear):null;
+    if(sr!=null)text(cv,'AWD  ·  '+(100-sr)+' / '+sr,508,498,22,'#ffffff',{font:'bold',spacing:2});
+    [['rpm','RPM'],['power','HP'],['boost',null,'BOOST'],['torque',null,'TORQUE'],['oil',null,'OIL'],['coolant',null,'WATER']].forEach((k,i)=>{
+        const q=D[k[0]], x=790+(i%2)*400, y=176+Math.floor(i/2)*112, s=shown(q), lab=(k[1]||(String(q[2]).toUpperCase()+' '+k[2]));
+        cv.text(s,x,y,84,'#ffffff',{font:'num',literal:true});
+        text(cv,lab,x+cv.textWidth(s,84,{font:'num',literal:true})+14,y,18,THEME.dim,{font:'bold',spacing:2});
+        cv.target(x-12,y-84,384,104,()=>o.a.big(k[0]),'big-'+k[0]);
+    });
+    const rpm=D.rpm[1], fr=typeof rpm==='number'?Math.max(0,Math.min(1,rpm/7000)):0, bx=790, bw=540, by=478, bh=16, SK=7;
+    cv.quad([[bx+SK,by],[bx+bw+SK,by],[bx+bw,by+bh],[bx,by+bh]],withAlpha('#ffffff',0.12));
+    if(fr>0)cv.quad([[bx+SK,by],[bx+bw*fr+SK,by],[bx+bw*fr,by+bh],[bx,by+bh]],fr>0.93?THEME.warn:A);
+    button(cv,1386,456,190,'Layout',o.a.layoutNext,'layoutNext',false,false);
+}
 const LAYOUTS={
+    slash:{name:'Slash',draw:slashLayout,keys:['rpm','boost','oil','coolant','torque'],ownFoot:true},
     cockpit:{name:'Cockpit',draw:cockpitLayout,keys:['rpm','boost','oil','coolant','iat','torque']},
     race:{name:'Race dash',draw:raceLayout,keys:['rpm','boost','oil','coolant','iat','torque']},
     graphs:{name:'Graph view',draw:graphLayout,keys:null},
     car:{name:'Car view',draw:carLayout,keys:['rpm','boost','oil','coolant','iat','torque','load']},
 };
-const LAYOUT_ORDER=['grid','cockpit','race','graphs','car'];
+const LAYOUT_ORDER=['slash','grid','cockpit','race','graphs','car'];
 function layoutFoot(cv,v,a,d) {
     text(cv,'Tap a reading to make it big   ·   Layout: '+LAYOUTS[v.layout].name,44,490,18,THEME.dim);
     button(cv,v.layout==='graphs'?1082:1262,456,190,'Reset min/max',a.resetPeaks,'resetPeaks',false,false);
@@ -819,7 +870,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.2.10 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.3.0 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W='#ffffff';
     cv.text('SMILEY',24,y,size,W,o);

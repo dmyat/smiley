@@ -2,6 +2,18 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.3.0
+
+- **New default look: Slash.** Racing red cut across black with white
+  lettering. The tabs are slanted and sit in the top right corner.
+- **Slash Live Stats screen.** The gear as tall as the screen on a red slab,
+  with engine speed, horsepower, boost, torque, oil and coolant beside it and
+  the revs as one slanted bar. Tap a reading to make it big. The Layout button
+  still steps through Six gauges, Cockpit, Race dash, Graph view and Car view.
+- A car that already has the app is moved to Slash once on this update. After
+  that your own choice of Theme and Live Stats layout in Settings is kept.
+- The other tabs wear the Slash colours and keep their layout for now.
+
 ## 0.2.10
 
 - **AWD / 2WD tab is back.** It stays off until you turn on "AWD / 2WD

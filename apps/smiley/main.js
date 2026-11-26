@@ -168,6 +168,10 @@ mgu.run({async start(ctx){
         betaContinue:()=>{betaEntry=null;notice='';repaint();},
         betaBack:()=>setPage(P.stats),
     };
+    // 0.3.0 made Slash the default look. A car that already had the app keeps its saved settings, so it
+    // is moved to Slash once; after that the owner's own choice in Settings is left alone.
+    try{const mark=require('path').join(ctx.dataDir,'look-0.3.0');const fs=require('fs');
+        if(!fs.existsSync(mark)){settings.set('theme','slash');settings.set('statsLayout','slash');fs.writeFileSync(mark,'1');}}catch(e){log.warn('look: '+e);}
     // warm-up minutes, the safe rev limit and the turbo cool-down (warm.js): fed once a second from the car's values
     const warm=new Warm();
     const mono=()=>{const h=process.hrtime();return h[0]*1000+h[1]/1e6;};
@@ -180,6 +184,7 @@ mgu.run({async start(ctx){
             tempUnit:settings.get('tempUnit'),pressUnit:settings.get('pressUnit'),torqueUnit:settings.get('torqueUnit')};
         v.tyres=demo?{fl:{p:2.48,target:2.5,t:31},fr:{p:2.48,target:2.5,t:32},rl:{p:2.62,target:2.7,t:34},rr:{p:2.25,target:2.7,t:33}}:telemetry.tyres.view();v.tyreHints=tyreHints;          // from the car's tyre pressure monitor (tyres.js)
         v.big=big;v.layout=settings.get('statsLayout');v.splash=settings.get('splash')==='off'?null:Date.now()-splashAt;
+        {const dd=telemetry.data(), g=demo?(dd.gear||4):dd.gear;v.gearText=g!=null&&(demo||dd.stage==='D'||dd.stage==null)?String(g):(dd.stage||'-');}
         v.oilC=demo?101:telemetry.fresh('oil',30000);          // the warm-up light in the header
         v.warm=demo?{minutes:null,limit:7000,redline:7000,cool:null}:warm.view();
         v.gearboxC=demo?78:telemetry.fresh('gearboxOil',60000);v.splitRear=demo?62:telemetry.fresh('splitRear',10000);

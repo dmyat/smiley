@@ -18,6 +18,7 @@ const targets=()=>{const r=Array.from(hu.display.recorders.values())[0];return (
 const tap=async(key)=>{await hu.loopFn();const t=targets().find((x)=>x.key===key);assert(t,'no button '+key+' among '+targets().map((x)=>x.key).join(','));await t.run();await hu.loopFn();};
 setTimeout(async()=>{
  try{
+  hu.ctx.settings.set('statsLayout','grid');await hu.loopFn();          // these checks are about the six-gauge page; Slash is the default layout
   const d=hu.display;assert(d&&typeof d._touch==='function','the kit display takes touches');
   await hu.loopFn();assert(!targets().some((t)=>/^slot/.test(t.key)),'not editing at the start');
   d._touch(1,100,150);await sleep(150);d._touch(3,100,150);await sleep(700);await hu.loopFn();assert(!targets().some((t)=>/^slot/.test(t.key)),'a quick tap does not open the editor');
@@ -45,14 +46,15 @@ setTimeout(async()=>{
   await tap('big-rpm');await tap('editStart').then(()=>assert.fail('no Edit button while a gauge is big'),()=>{});await tap('bigClose');
   await tap('editStart');assert(!targets().some((t)=>/^big-/.test(t.key)),'no big mode while editing');await tap('editDone');
   // the Layout button steps through the other layouts and back to the six gauges; each opens big number mode
-  assert.equal(hu.ctx.settings.get('statsLayout'),'grid','six gauges is the default');assert(!targets().some((t)=>t.key==='layoutNext'),'the six-gauge page has no Layout button');
+  assert.equal(hu.spec.settings.find((s)=>s.key==='statsLayout').default,'slash','Slash is the default layout');assert(!targets().some((t)=>t.key==='layoutNext'),'the six-gauge page has no Layout button');
   hu.ctx.settings.set('statsLayout','cockpit');
   for(const name of ['cockpit','race','graphs','car']){
     await hu.loopFn();assert.equal(hu.ctx.settings.get('statsLayout'),name);
     assert(!targets().some((t)=>t.key==='editStart'),name+' has no gauge editor');assert(targets().some((t)=>t.key==='big-boost'),name+' shows boost');
     await tap('big-boost');assert(targets().some((t)=>t.key==='bigClose'));await tap('bigClose');await tap('layoutNext');
   }
-  assert.equal(hu.ctx.settings.get('statsLayout'),'grid','after Car view the Layout button goes back to the six gauges');assert(targets().some((t)=>t.key==='editStart'));
+  assert.equal(hu.ctx.settings.get('statsLayout'),'slash','after Car view the Layout button comes round to Slash');assert(targets().some((t)=>t.key==='big-power'),'Slash shows horsepower');
+  await tap('layoutNext');assert.equal(hu.ctx.settings.get('statsLayout'),'grid');assert(targets().some((t)=>t.key==='editStart'));
   console.log('PASS hold-to-edit: quick taps and drags ignored, hold opens the pick list, choose from it, default layout and done');process.exit(0);
  }catch(e){console.error(e.stack);process.exit(1);}
 },700);
