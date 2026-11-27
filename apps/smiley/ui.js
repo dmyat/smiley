@@ -954,7 +954,7 @@ function xdrivePage(cv,v,a) {
     String(note).split(' · ').slice(0,3).forEach((line,i)=>text(cv,line.slice(0,52),1026,362+i*28,19,x.noteType==='go'?THEME.ok:x.noteType==='warn'?THEME.warn:THEME.dim));
     text(cv,'Experimental  ·  Try it in an empty lot first  ·  Traction control may act differently in 2WD  ·  The car stores a fault code while in 2WD',44,490,18,THEME.dim);
 }
-/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.4.5 */
+/** The maker's mark, bottom left on every page: SMILEY (dot) by David. v.0.4.6 */
 function watermark(cv,v) {
     const y=514, size=14, o={font:'bold',spacing:1.5}, W=THEME.light?THEME.text:'#ffffff';
     cv.text('SMILEY',24,y,size,W,o);
@@ -1105,48 +1105,57 @@ function gPage(cv,p,a) {
 function dynoPage(cv,p,v) {
     const d=p.dyno, r=d.last, b=d.prev, hp=(w)=>w/745.7, lbft=v.torqueUnit==='lbft', tq=(nm)=>lbft?nm*0.73756:nm, tU=lbft?'lb-ft':'Nm';
     const st={idle:[r?'LAST PULL':'READY - FLOOR IT IN ONE GEAR',THEME.dim],pull:['RECORDING',GO],short:['TOO SHORT - REV 1500+ RPM',THEME.warn],done:['NEW PULL SAVED',GO]}[d.state];
-    card(cv,44,160,372,300,16);
-    text(cv,st[0],70,198,16,st[1],{font:'bold',spacing:1});
-    text(cv,'PEAK POWER',70,236,13,THEME.dim,{font:'bold',spacing:1.5});
-    const w1=cv.text(r?hp(r.peakP).toFixed(0):'---',70,292,60,THEME.accent,{font:'num'});text(cv,'hp',70+(w1||110)+10,292,22,THEME.dim);
-    text(cv,r?'at '+r.peakPrpm+' rpm':'',70,316,17,THEME.dim);
-    text(cv,'PEAK TORQUE',70,350,13,THEME.dim,{font:'bold',spacing:1.5});
-    const w2=cv.text(r?tq(r.peakT).toFixed(0):'---',70,400,52,THEME.cold,{font:'num'});text(cv,tU,70+(w2||100)+10,400,22,THEME.dim);
-    text(cv,r?'at '+r.peakTrpm+' rpm':'',70,424,17,THEME.dim);
-    if(r&&b){
-        // against the pull before
+    // Since 0.4.6: a taller graph that fills the page, peaks named in the legend (not on top of the curves), and a
+    // comparison with the pull before only when the two pulls covered the same revs.
+    const cov=r?[Math.min(...r.curve.map((c)=>c.rpm)),Math.max(...r.curve.map((c)=>c.rpm))]:null;
+    const covB=b?[Math.min(...b.curve.map((c)=>c.rpm)),Math.max(...b.curve.map((c)=>c.rpm))]:null;
+    const comparable=!!(r&&b&&covB[0]<=r.peakPrpm&&covB[1]>=r.peakPrpm&&covB[0]<=r.peakTrpm&&covB[1]>=r.peakTrpm);
+    card(cv,44,160,330,336,16);
+    text(cv,st[0],66,196,16,st[1],{font:'bold',spacing:1});
+    text(cv,'PEAK POWER',66,230,13,THEME.dim,{font:'bold',spacing:1.5});
+    const w1=cv.text(r?hp(r.peakP).toFixed(0):'---',66,288,62,THEME.accent,{font:'num'});text(cv,'hp',66+(w1||110)+10,288,22,THEME.dim);
+    text(cv,r?'at '+r.peakPrpm+' rpm':'',66,312,17,THEME.dim);
+    text(cv,'PEAK TORQUE',66,346,13,THEME.dim,{font:'bold',spacing:1.5});
+    const w2=cv.text(r?tq(r.peakT).toFixed(0):'---',66,398,54,THEME.cold,{font:'num'});text(cv,tU,66+(w2||100)+10,398,22,THEME.dim);
+    text(cv,r?'at '+r.peakTrpm+' rpm':'',66,422,17,THEME.dim);
+    if(comparable){
         const dp=hp(r.peakP)-hp(b.peakP), dt=tq(r.peakT)-tq(b.peakT), sg=(n)=>(n>=0?'+':'')+n.toFixed(0);
-        text(cv,sg(dp)+' hp',396,292,18,dp>=0?GO:THEME.crit,{align:'right',font:'num'});text(cv,sg(dt)+' '+tU,396,400,18,dt>=0?GO:THEME.crit,{align:'right',font:'num'});
+        text(cv,sg(dp)+' hp',354,288,18,dp>=0?GO:THEME.crit,{align:'right',font:'num'});text(cv,sg(dt)+' '+tU,354,398,18,dt>=0?GO:THEME.crit,{align:'right',font:'num'});
     }
-    text(cv,d.power==null?'':'now '+Math.max(0,hp(d.power)).toFixed(0)+' hp',70,448,16,THEME.text,{font:'num'});
-    card(cv,440,160,1116,300,16);
-    if(!r){text(cv,'Floor it in one gear to draw your power curve',998,318,24,THEME.dim,{align:'center'});return;}
-    // the scales fit the pulls shown
+    cv.fillRect(66,440,286,1,withAlpha(THEME.tick,0.4));
+    text(cv,r?'PULL COVERED':'',66,464,13,THEME.dim,{font:'bold',spacing:1.5});
+    text(cv,r?cov[0]+' to '+cov[1]+' rpm':'',66,486,17,THEME.text,{font:'num'});
+    text(cv,d.power==null?'':'now '+Math.max(0,hp(d.power)).toFixed(0)+' hp',354,486,16,THEME.dim,{font:'num',align:'right'});
+    card(cv,392,160,1164,336,16);
+    if(!r){
+        text(cv,'Floor it in one gear to draw your power curve',974,312,24,THEME.dim,{align:'center'});
+        text(cv,'For the whole curve: 3rd or 4th gear in manual mode, start near 2000 rpm, pedal down to the redline.',974,350,17,THEME.dim,{align:'center'});
+        return;
+    }
     const runs=[b,r].filter(Boolean), all=runs.reduce((a,x)=>a.concat(x.curve),[]);
     // the whole rev range, 1000 to 7000 rpm, whatever part of it the pull covered
     const x0=Math.min(1000,Math.floor(Math.min(...all.map((c)=>c.rpm))/500)*500), x1=Math.max(7000,Math.ceil(Math.max(...all.map((c)=>c.rpm))/500)*500);
-    const yMax=Math.ceil(Math.max(100,...all.map((c)=>Math.max(hp(c.p),tq(c.t))))*1.18/50)*50;
-    const X=460, Y=200, Wd=1076, Hd=228, padL=44, padB=26, padR=8, padT=8;      // the legend sits above the graph
-    const line=(run,f,color,width)=>({pts:run.curve.map((c)=>[c.rpm,f(c)]),color,width});
+    const top=Math.max(100,...all.map((c)=>Math.max(hp(c.p),tq(c.t))))*1.1, yStep=top<=250?50:top<=600?100:200, yMax=Math.ceil(top/yStep)*yStep;
+    const X=410, Y=208, Wd=1128, Hd=258, padL=44, padB=26, padR=8, padT=8;
+    const px=(rpm)=>X+padL+(rpm-x0)/(x1-x0)*(Wd-padL-padR), py=(val)=>Y+padT+(Hd-padT-padB)*(1-val/yMax);
+    // the revs this pull covered, as a soft band behind the curves
+    cv.fillRect(px(cov[0]),Y+padT,px(cov[1])-px(cov[0]),Hd-padT-padB,withAlpha(THEME.accent,0.04));
+    const line=(run,f,color,width,fill)=>({pts:run.curve.map((c)=>[c.rpm,f(c)]),color,width,fill});
     const series=[];
     if(b){series.push(line(b,(c)=>hp(c.p),withAlpha(THEME.accent,0.3),2));series.push(line(b,(c)=>tq(c.t),withAlpha(THEME.cold,0.3),2));}
-    series.push(line(r,(c)=>hp(c.p),THEME.accent,4));series.push(line(r,(c)=>tq(c.t),THEME.cold,3));
-    G.chart(cv,THEME,X,Y,Wd,Hd,{xMin:x0,xMax:x1,yMin:0,yMax,xStep:1000,yStep:yMax/5,xFmt:(n)=>String(n),yFmt:(n)=>String(Math.round(n)),series});
-    // the peaks, marked on the curves and named
-    const px=(rpm)=>X+padL+(rpm-x0)/(x1-x0)*(Wd-padL-padR), py=(val)=>Y+padT+(Hd-padT-padB)*(1-val/yMax);
-    const mark=(rpm,val,color,label,up)=>{
-        const mx=px(rpm), my=py(val), right=mx<X+Wd-240;
-        cv.circle(mx,my,9,withAlpha(color,0.3));cv.circle(mx,my,5,color);
-        text(cv,label,mx+(right?12:-12),my+(up?-12:26),17,color,{font:'bold',align:right?'left':'right'});
-    };
-    // a label goes on the side of its curve away from the other curve
-    const near=(rpm)=>r.curve.reduce((m,c)=>(Math.abs(c.rpm-rpm)<Math.abs(m.rpm-rpm)?c:m),r.curve[0]);
-    mark(r.peakPrpm,hp(r.peakP),THEME.accent,hp(r.peakP).toFixed(0)+' hp @ '+r.peakPrpm,hp(r.peakP)>=tq(near(r.peakPrpm).t));
-    mark(r.peakTrpm,tq(r.peakT),THEME.cold,tq(r.peakT).toFixed(0)+' '+tU+' @ '+r.peakTrpm,tq(r.peakT)>hp(near(r.peakTrpm).p));
-    cv.fillRect(X+padL,182,22,4,THEME.accent);text(cv,'POWER hp',X+padL+30,189,14,THEME.accent,{font:'bold',spacing:1});
-    cv.fillRect(X+padL+150,182,22,4,THEME.cold);text(cv,'TORQUE '+tU,X+padL+180,189,14,THEME.cold,{font:'bold',spacing:1});
-    if(b)text(cv,'faint lines: the pull before',X+padL+330,189,14,THEME.dim);
-    text(cv,'rpm  ·  '+d.weight+' kg, '+d.loss+'% drivetrain loss  ·  an estimate, not a dyno sheet',1536,452,14,THEME.dim,{align:'right'});
+    series.push(line(r,(c)=>hp(c.p),THEME.accent,4,0.09));series.push(line(r,(c)=>tq(c.t),THEME.cold,3));
+    G.chart(cv,THEME,X,Y,Wd,Hd,{xMin:x0,xMax:x1,yMin:0,yMax,xStep:1000,yStep,xFmt:(n)=>String(n),yFmt:(n)=>String(Math.round(n)),series});
+    // each peak: a dot on its curve and a fine line down to the revs it was made at; the numbers are in the legend
+    const mark=(rpm,val,color)=>{const mx=px(rpm), my=py(val);cv.fillRect(Math.round(mx),my,1,Y+Hd-padB-my,withAlpha(color,0.45));cv.circle(mx,my,10,withAlpha(color,0.3));cv.circle(mx,my,5.5,color);};
+    mark(r.peakPrpm,hp(r.peakP),THEME.accent);mark(r.peakTrpm,tq(r.peakT),THEME.cold);
+    let lx=X+padL;
+    const legend=(color,str)=>{cv.fillRect(lx,181,24,5,color);lx+=34;lx+=(cv.text(str,lx,190,16,color,{font:'bold',spacing:0.5})||cv.textWidth(str,16,{font:'bold',spacing:0.5}))+36;};
+    legend(THEME.accent,'POWER  '+hp(r.peakP).toFixed(0)+' hp at '+r.peakPrpm+' rpm');
+    legend(THEME.cold,'TORQUE  '+tq(r.peakT).toFixed(0)+' '+tU+' at '+r.peakTrpm+' rpm');
+    if(b)text(cv,'faint: the pull before',lx,190,14,THEME.dim);
+    text(cv,d.weight+' kg, '+d.loss+'% drivetrain loss  ·  an estimate, not a dyno sheet',1536,190,14,THEME.dim,{align:'right'});
+    if(cov[1]-cov[0]<2500)text(cv,'This pull covered '+(cov[1]-cov[0])+' rpm. For the whole curve: 3rd or 4th gear in manual mode, start near 2000 rpm, pedal down to the redline.',X+padL,486,15,THEME.warn);
+    else text(cv,'rpm',X+Wd-padR,486,14,THEME.dim,{align:'right'});
 }
 function brakePage(cv,p) {
     const b=p.brake, ft=p.mph, D=(m)=>m==null?'--':(ft?m*3.28084:m).toFixed(1), dU=ft?'ft':'m', r=b.last;

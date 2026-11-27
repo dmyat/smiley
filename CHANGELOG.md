@@ -2,6 +2,20 @@
 
 Every version of the app from the first build to now, newest first.
 
+## 0.4.6
+
+Dyno page, reworked after the first real pulls on the car.
+
+- **Bigger graph:** it is wider and taller and fills the page.
+- **Peaks in the legend:** peak power and torque with their revs are written
+  above the graph, with a dot and a fine line on each curve, so the numbers no
+  longer sit on top of the lines.
+- **Honest comparison:** the plus or minus against the pull before only shows
+  when both pulls covered the same revs.
+- **Rounder scale:** steps of 50, 100 or 200 instead of odd numbers.
+- **Pull covered:** the page says which revs the pull covered, shades them,
+  and when it was a short one says how to get the whole curve.
+
 ## 0.4.5
 
 - The app's icon has a clear background: the black is gone, so only the car,
